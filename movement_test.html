@@ -20,6 +20,7 @@
 			
 			function store_background_tile(x_id, y_id, posx, posy, is_solid, img)
 			{
+				//Die Tiles werden in einem globalen Dictionary gespeichert, sodass für jedes Tile Koordinaten und andere Eigenschaften zugänglich sind
 				if ( background_tiles[x_id] == undefined ) 
 				{
 					background_tiles[x_id] = {};
@@ -52,7 +53,8 @@
 				var step = 40;
 				var i = 0;
 				var j = 0;
-				console.log("i vor der schleife: "+i);
+				/*FIXME: dieses Konstrukt sollte eigentlich für jede x und y Position des Hintergrunds ein zufällig ausgewähltes grass_tile laden
+						- jedes tile soll in der Größe 40x40 dargestellt werden, also werden die Koordinaten in 40er Schritten vergeben*/
 				for ( i = 0; i < 20; i++ )
 				{
 					var random_x = Math.floor((Math.random() * 4) + 1);
@@ -102,6 +104,7 @@
 			
 			function draw_background()
 			{
+				//TODO: hier soll der Hintergrund mit den ausgewählten background_tiles gemalt werden, dazu muss allerdings das Auswählen der tiles erstmal funzen!
 				var bg_x = 10;
 				var bg_y = 10;
 				bg_canvas = document.getElementById("background_canvas");
@@ -142,6 +145,8 @@
 			
 			function move_char()
 			{
+				/*Hier wird der char bewegt bzw. die Animationsphasen gemalt
+				FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben? Wenn ja würden einige der globalen Variablen wegfallen.*/
 				//console.log("move_char");
 				if ( is_moving != null )
 				{
@@ -149,6 +154,7 @@
 					c = canvas.getContext("2d");
 					var image = null;
 					
+					//FIXME: Das kann man bestimmt noch einfacher oder eleganter lösen...
 					if ( animation_parts == 5 )
 					{
 						if ( move_counter >= 0 && move_counter <= 2 )
@@ -179,9 +185,12 @@
 							image = get_image("images/dummy_sprite_"+direction+"2.png");
 						}
 					}
+					
 					//console.log("debug: "+move_counter);
 					var old_x = current_x;
 					var old_y = current_y;
+					//Verschieben der Position des chars, wenn er an den Seiten das Canvas verlässt
+					//TODO: Später will ich dieses Gedöhns ersetzen und stattdessen den Background bewegen und den char in der Mitte lassen (aber eins nach dem anderen...)
 					if ( direction == "down" )
 					{
 						current_y = current_y + 8;
