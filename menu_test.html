@@ -1,0 +1,92 @@
+<html>
+	<head>
+		<script>
+			var current_btn = 0;
+			var current_btn_name = "atk";
+			var buttons = ["atk","def","skill"];
+			var button_positions = {};
+			button_positions["atk"] = [20, 20];
+			button_positions["def"] = [20, 60];
+			button_positions["skill"] = [20, 100];
+			
+			function get_image(file)
+			{
+				img = new Image();
+				img.src = file;
+				return img;
+			}
+			
+			function draw_panel()
+			{
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				var panel = get_image("images/panel_blank.png")
+				var atk_btn = get_image("images/atk_btn.png");
+				var def_btn = get_image("images/def_btn.png");
+				var skill_btn = get_image("images/skill_btn.png");
+				
+				c.drawImage(panel, 10,10);
+				c.drawImage(atk_btn, 20, 20);
+				c.drawImage(def_btn, 20, 60);
+				c.drawImage(skill_btn, 20, 100);
+			}
+			
+			function draw_btn(direction)
+			{
+				if ( direction == "down" )
+				{
+					if ( current_btn < buttons.length )
+					{
+						current_btn += 1;
+					}
+				}
+				else if ( direction == "up" )
+				{
+					if ( current_btn > 0 )
+					{
+						current_btn -= 1;
+					}
+				}
+				
+				var current_btn_x = button_positions[current_btn_name][0];
+				var current_btn_y = button_positions[current_btn_name][1];
+				var new_btn_name = buttons[current_btn];
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				console.log(current_btn_name);
+				var current_btn_img = get_image("images/"+current_btn_name+"_btn.png");
+				var btn = get_image("images/"+new_btn_name+"_btn_selected.png");
+				var btn_x = button_positions[new_btn_name][0];
+				var btn_y = button_positions[new_btn_name][1];
+				console.log(current_btn_img.src);
+				c.clearRect(current_btn_x, current_btn_y, 120, 35);
+				c.drawImage(current_btn_img, current_btn_x, current_btn_y);
+				c.clearRect(btn_x, btn_y, 120, 35);
+				c.drawImage(btn, btn_x, btn_y);
+				current_btn_name = new_btn_name;
+			}
+			
+			function handle_key_event(evt)
+			{
+				switch(evt.keyCode)
+				{
+					case 40:
+						draw_btn("down");
+						break;
+					case 38:
+						draw_btn("up");
+						break;
+				}
+			}
+			window.addEventListener('keydown', handle_key_event, true);
+		</script>
+	</head>
+	<body>
+		<div style="position: relative;">
+			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+		</div>
+		<button onclick="javascript:draw_panel()" style="position: absolute; left: 0; top: 500;">test</button>
+		<button onclick="javascript:draw_btn('images/def_btn.png')" style="position: absolute; left: 200; top: 500;">btn</button>
+	</body>
+</html>
