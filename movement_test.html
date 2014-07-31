@@ -8,10 +8,10 @@
 			var move_lock = false;
 			var move_counter = 0;
 			var animation_parts = 5;
-			var current_x = 10;
-			var current_y = 10;
-			var char_width = 80;
-			var char_height = 80;
+			var current_x = 0;
+			var current_y = 0;
+			var char_width = 40;
+			var char_height = 40;
 			var direction = null;
 			var background1 = "images/grass_chunk1.png"
 			var background2 = "images/grass_chunk2.png"
@@ -148,6 +148,7 @@
 				/*Hier wird der char bewegt bzw. die Animationsphasen gemalt
 				FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben? Wenn ja würden einige der globalen Variablen wegfallen.*/
 				//console.log("move_char");
+				var char_file_name = "images/dummy_sprite_"+direction+"_bandana"
 				if ( is_moving != null )
 				{
 					canvas = document.getElementById("canvas");
@@ -160,13 +161,14 @@
 						if ( move_counter >= 0 && move_counter <= 2 )
 						{
 							//console.log("debug: "+move_counter);
-							image = get_image("images/dummy_sprite_"+direction+"1.png");
+							//image = get_image("images/dummy_sprite_"+direction+"_bandana1.png");
+							image = get_image(char_file_name+"1.png");
 						}
 						else if ( move_counter >= 3 && move_counter <= 5 )
 						{
 							
 							//console.log("debug: "+move_counter);
-							image = get_image("images/dummy_sprite_"+direction+"2.png");
+							image = get_image(char_file_name+"2.png");
 						}
 					}
 					else
@@ -174,15 +176,15 @@
 						if ( move_counter >= 0 && move_counter <= 2 )
 						{
 							//console.log("debug: "+move_counter);
-							image = get_image("images/dummy_sprite_"+direction+"1.png");
+							image = get_image(char_file_name+"1.png");
 						}
 						else if ( move_counter >= 3 && move_counter <= 5 )
 						{
-							image = get_image("images/dummy_sprite_"+direction+".png");
+							image = get_image(char_file_name+".png");
 						}
 						else if ( move_counter >= 6 && move_counter <= 8 )
 						{
-							image = get_image("images/dummy_sprite_"+direction+"2.png");
+							image = get_image(char_file_name+"2.png");
 						}
 					}
 					
@@ -201,27 +203,27 @@
 					}
 					else if ( direction == "left" )
 					{
-						current_x = current_x - 8;
+						current_x = current_x - 5;
 					}
 					else if ( direction == "right" )
 					{
-						current_x = current_x + 8;
+						current_x = current_x + 5;
 					}
-					if ( current_y > 395 )
+					if ( current_y > 380 )
 					{
-						current_y = 5;
+						current_y = 0;
 					}
-					else if ( current_y < 2 )
+					else if ( current_y < 0 )
 					{
-						current_y = 395;
+						current_y = 360;
 					}
-					if ( current_x < 2 )
+					if ( current_x < 0 )
 					{
-						current_x = 470;
+						current_x = 440;
 					}
-					else if ( current_x > 470 )
+					else if ( current_x > 480 )
 					{
-						current_x = 5;
+						current_x = 0;
 					}
 					//console.log(image.src);
 					c.clearRect(old_x, old_y, char_width, char_height);
@@ -252,7 +254,7 @@
 			{
 				//console.log("move");
 				standing = new Image();
-				standing.src = "images/dummy_sprite_"+dir+".png";
+				standing.src = "images/dummy_sprite_"+dir+"_bandana.png";
 				if ( running == false )
 				{
 					running = true;
