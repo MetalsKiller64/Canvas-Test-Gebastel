@@ -1,0 +1,156 @@
+<html>
+	<head>
+		<style>
+			.sprite_map_border {
+				display: inline-block;
+				padding: 50px;
+				background-color: grey;
+			}
+			.sprite_map_content {
+				position: relative;
+			}
+			.sprite_map {
+				background-color: pink;
+			}
+			table.grid {
+				position: absolute;
+				left: 0;
+				top: 0;
+				border-collapse: collapse;
+				background-color: pink;
+			}
+			table.grid, table.grid th, table.grid td {
+				border: 1px solid red;
+			}
+			table.view_setup {
+				background-color: lightblue;
+			}
+			.view_setup div {
+				display: inline-block;
+				min-width: 32px;
+				height: 32px;
+				background-color: red;
+			}
+			div.view_chain {
+				padding-right: 32px;
+				background-color: grey;
+			}
+		</style>
+		<script src="js/jquery.js"></script>
+		<script>
+			var img = null;
+			$(document).ready( function() {
+				img = new Image();
+				img.src = $(".sprite_map")[0].src;
+				update_grid();
+				$(".view_chain").on("dragenter", function(event) {
+					event.preventDefault();
+				});
+				$(".view_chain").on("dragover", function(event) {
+					event.preventDefault();
+				});
+				$(".view_chain").on("drop", function(event) {
+					event.preventDefault();
+					var canvas = event.originalEvent.dataTransfer.mozSourceNode;
+					var clone_canvas = $(canvas).clone()[0];
+					var ctx = clone_canvas.getContext("2d");
+					ctx.drawImage( canvas, 0, 0 );
+					$(this).append( clone_canvas );
+				});
+			});
+			
+			var gw = null; var gh = null;
+			var mw = null; var mh= null;
+			var pw = null; var ph = null;
+			var drop_canvas = null;
+			function update_grid() {
+				$("table.grid").remove();
+				var grid = $("<table>");
+				gw = Number($(".grid_width_input").val());
+				gh = Number($(".grid_height_input").val());
+				mw = $(".sprite_map").width(); 
+				mh = $(".sprite_map").height();
+				pw = Math.floor(mw/gw);
+				ph = Math.floor(mh/gh);
+				for( h=0; h<gh; h++ ) {
+					var row = $("<tr>");
+					for( w=0; w<gw; w++ ) {
+						var cel = $("<td>").attr( {} );
+						var canvas = $("<canvas>").attr( {width:pw,height:ph,draggable:true} );
+						var ctx = canvas[0].getContext("2d");
+						ctx.drawImage( img, w*pw, h*ph, pw, ph, 0, 0, pw, ph );
+						canvas.on("dragstart", function(event) {
+							event.originalEvent.dataTransfer.setData("text/plain",this);
+						});
+						cel.append( canvas );
+						row.append( cel );
+					}
+					grid.append( row );
+				}
+				grid.addClass( "grid" );
+				$(".sprite_map_content").append( grid );
+				grid.width( mw );
+				grid.height( mh );
+				$(".view_setup div").each( function(i, el) {
+					el.style.minWidth = pw;
+					el.style.height = ph;
+				});
+				$(".view_chain").each( function(i, el) {
+					el.style.paddingRight = pw;
+				});
+			}
+			
+			function grid_change( name, amount ) {
+				var ipt = $(".grid_"+name+"_input");
+				ipt.val( Number(ipt.val())+amount );
+				update_grid();
+			}
+		</script>
+	</head>
+	<body>
+		<div class="sprite_map_border">
+			<div class="sprite_map_content">
+				<img class="sprite_map" src="images/chica_pepsi.png" />
+			</div>
+		</div>
+		<div class="grid_setup">
+			<div class="grid_width">
+				<button class="grid_width_minus" onclick="grid_change('width',-1)">-</button>
+				<input class="grid_width_input" type="text" value="3" onchange="update_grid()" />
+				<button class="grid_width_plus" onclick="grid_change('width',+1)">+</button>
+			</div>
+			<div class="grid_height">
+				<button class="grid_height_minus" onclick="grid_change('height',-1)">-</button>
+				<input class="grid_height_input" type="text" value="4" onchange="update_grid()" />
+				<button class="grid_height_plus" onclick="grid_change('height',+1)">+</button>
+			</div>
+		</div>
+		<table class="view_setup">
+			<tr class="view_heading">
+				<th></th>
+				<th>stehen</th>
+				<th>gehen</th>
+			</tr>
+			<tr class="view_front">
+				<td class="front_symbol">\/</td>
+				<td class="front_stand"><div class="front_stand_result"></div><div class="view_chain front_stand_chain"></div></td>
+				<td class="front_walk"><div class="front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
+			</tr>
+			<tr class="view_right">
+				<td class="right_symbol">&gt;</td>
+				<td class="right_stand"><div class="right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
+				<td class="right_walk"><div class="right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
+			</tr>
+			<tr class="view_left">
+				<td class="left_symbol">&lt;</td>
+				<td class="left_stand"><div class="left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
+				<td class="left_walk"><div class="left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
+			</tr>
+			<tr class="view_back">
+				<td class="back_symbol">/\</td>
+				<td class="back_stand"><div class="back_stand_result"></div><div class="view_chain back_stand_chain"></div></td>
+				<td class="back_walk"><div class="back_walk_result"></div><div class="view_chain back_walk_chain"></div></td>
+			</tr>
+		</table>
+	</body>
+</html>
