@@ -1,19 +1,15 @@
+<!DOCTYPE html>
 <html>
 	<head>
+		<meta charset="utf-8" />
+		<title>Spritekonfigurations-Test</title>
 		<style>
 			.sprite_map_border {
 				display: inline-block;
 				padding: 50px;
 				background-color: grey;
 			}
-			.sprite_map_content {
-				position: relative;
-			}
-			.sprite_map {
-				background-color: pink;
-			}
 			table.grid {
-				position: absolute;
 				left: 0;
 				top: 0;
 				border-collapse: collapse;
@@ -35,14 +31,24 @@
 				padding-right: 32px;
 				background-color: grey;
 			}
+			td.view_delete {
+				color: red;
+				background-color: grey;
+				vertical-align:middle;
+				text-align:center;
+				font-size:120px;
+				padding: 20px;
+			}
 		</style>
 		<script src="js/jquery.js"></script>
 		<script>
 			var img = null;
 			$(document).ready( function() {
 				img = new Image();
-				img.src = $(".sprite_map")[0].src;
-				update_grid();
+				img.src = "images/chica_pepsi.png";
+				img.onload = update_grid;
+				
+				// Drag'n Drop-Events für die Animationstabelle
 				$(".view_chain").on("dragenter", function(event) {
 					event.preventDefault();
 				});
@@ -53,9 +59,33 @@
 					event.preventDefault();
 					var canvas = event.originalEvent.dataTransfer.mozSourceNode;
 					var clone_canvas = $(canvas).clone()[0];
+					$(clone_canvas).addClass( "view_chain_element" );
+					$(clone_canvas).attr( {draggable:true} );
+					$(clone_canvas).on("dragstart", function(event) {
+						event.originalEvent.dataTransfer.setData("text/plain",this);
+					});
 					var ctx = clone_canvas.getContext("2d");
 					ctx.drawImage( canvas, 0, 0 );
 					$(this).append( clone_canvas );
+					
+					update_view_result( this );
+				});
+				
+				// Drag'n Drop-Events für das Löschfeld
+				$(".view_delete").on("dragenter", function(event) {
+					event.preventDefault();
+				});
+				$(".view_delete").on("dragover", function(event) {
+					event.preventDefault();
+				});
+				$(".view_delete").on("drop", function(event) {
+					event.preventDefault();
+					var canvas = event.originalEvent.dataTransfer.mozSourceNode;
+					if( $(canvas).hasClass("view_chain_element") ) {
+						var chain = $(canvas).closest(".view_chain")[0];
+						canvas.remove();
+						update_view_result( chain );
+					}
 				});
 			});
 			
@@ -68,8 +98,8 @@
 				var grid = $("<table>");
 				gw = Number($(".grid_width_input").val());
 				gh = Number($(".grid_height_input").val());
-				mw = $(".sprite_map").width(); 
-				mh = $(".sprite_map").height();
+				mw = img.width; 
+				mh = img.height;
 				pw = Math.floor(mw/gw);
 				ph = Math.floor(mh/gh);
 				for( h=0; h<gh; h++ ) {
@@ -89,11 +119,9 @@
 				}
 				grid.addClass( "grid" );
 				$(".sprite_map_content").append( grid );
-				grid.width( mw );
-				grid.height( mh );
 				$(".view_setup div").each( function(i, el) {
 					el.style.minWidth = pw;
-					el.style.height = ph;
+					$(el).height( ph );
 				});
 				$(".view_chain").each( function(i, el) {
 					el.style.paddingRight = pw;
@@ -105,12 +133,50 @@
 				ipt.val( Number(ipt.val())+amount );
 				update_grid();
 			}
+			
+			function update_view_result( chain ) {
+				var cel = $(chain).closest("td");
+				var view_result = $( ".view_result", cel );
+				view_result.empty();
+				$( "canvas.view_chain_element", chain ).each( function(i, canvas) {
+					var clone_canvas = $(canvas).clone()[0];
+					$(clone_canvas).removeClass( "view_chain_element" );
+					$(clone_canvas).addClass( "view_result_element" );
+					if( i==0 ) {
+						clone_canvas.style.display="";
+					} else {
+						clone_canvas.style.display="none";
+					}
+					var ctx = clone_canvas.getContext("2d");
+					ctx.drawImage( canvas, 0, 0 );
+					view_result.append( clone_canvas );
+				});
+				if( view_result.data().interval ) {
+					clearInterval(view_result.data().interval);
+				}
+				view_result.data( {interval: setInterval(animate_view_result, 60, view_result[0]), next_animation_step: 1} );
+			}
+			
+			function animate_view_result( view_result ) {
+				var step_count = 0;
+				$( "canvas.view_result_element", view_result ).each( function(i, canvas) {
+					step_count += 1;
+					if( $(view_result).data().next_animation_step==i ) {
+						canvas.style.display="";
+					} else {
+						canvas.style.display="none";
+					}
+				});
+				$(view_result).data().next_animation_step += 1;
+				if( $(view_result).data().next_animation_step==step_count ) {
+					$(view_result).data().next_animation_step=0;
+				}
+			}
 		</script>
 	</head>
 	<body>
 		<div class="sprite_map_border">
 			<div class="sprite_map_content">
-				<img class="sprite_map" src="images/chica_pepsi.png" />
 			</div>
 		</div>
 		<div class="grid_setup">
@@ -130,26 +196,28 @@
 				<th></th>
 				<th>stehen</th>
 				<th>gehen</th>
+				<th>löschen</th>
 			</tr>
 			<tr class="view_front">
 				<td class="front_symbol">\/</td>
-				<td class="front_stand"><div class="front_stand_result"></div><div class="view_chain front_stand_chain"></div></td>
-				<td class="front_walk"><div class="front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
+				<td class="front_stand"><div class="view_result front_stand_result"></div><div class="view_chain front_stand_chain"></div></td>
+				<td class="front_walk"><div class="view_result front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
+				<td class="view_delete" rowspan="4">X</td>
 			</tr>
 			<tr class="view_right">
 				<td class="right_symbol">&gt;</td>
-				<td class="right_stand"><div class="right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
-				<td class="right_walk"><div class="right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
+				<td class="right_stand"><div class="view_result right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
+				<td class="right_walk"><div class="view_result right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
 			</tr>
 			<tr class="view_left">
 				<td class="left_symbol">&lt;</td>
-				<td class="left_stand"><div class="left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
-				<td class="left_walk"><div class="left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
+				<td class="left_stand"><div class="view_result left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
+				<td class="left_walk"><div class="view_result left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
 			</tr>
 			<tr class="view_back">
 				<td class="back_symbol">/\</td>
-				<td class="back_stand"><div class="back_stand_result"></div><div class="view_chain back_stand_chain"></div></td>
-				<td class="back_walk"><div class="back_walk_result"></div><div class="view_chain back_walk_chain"></div></td>
+				<td class="back_stand"><div class="view_result back_stand_result"></div><div class="view_chain back_stand_chain"></div></td>
+				<td class="back_walk"><div class="view_result back_walk_result"></div><div class="view_chain back_walk_chain"></div></td>
 			</tr>
 		</table>
 	</body>
