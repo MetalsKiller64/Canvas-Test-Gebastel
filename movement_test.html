@@ -17,16 +17,20 @@
 			var background2 = "images/grass_chunk2.png"
 			var interval = null;
 			var background_tiles = {};
+			var max_background_x = 0;
+			var max_background_y = 0;
 			
 			function store_background_tile(x_id, y_id, posx, posy, is_solid, img)
 			{
 				//Die Tiles werden in einem globalen Dictionary gespeichert, sodass für jedes Tile Koordinaten und andere Eigenschaften zugänglich sind
 				if ( background_tiles[x_id] == undefined ) 
 				{
+					//console.log("debug: store_background_tile: "+x_id+" undefined")
 					background_tiles[x_id] = {};
 				}
 				if ( background_tiles[x_id][y_id] == undefined )
 				{
+					//console.log("debug: store_background_tile: "+x_id+"|"+y_id+" undefined")
 					background_tiles[x_id][y_id] = [posx, posy, is_solid, img];
 				}
 				else
@@ -51,31 +55,42 @@
 				var stepped_x = start_x;
 				var stepped_y = start_y;
 				var step = 40;
-				var i = 0;
-				var j = 0;
-				/*FIXME: dieses Konstrukt sollte eigentlich für jede x und y Position des Hintergrunds ein zufällig ausgewähltes grass_tile laden
-						- jedes tile soll in der Größe 40x40 dargestellt werden, also werden die Koordinaten in 40er Schritten vergeben*/
-				for ( i = 0; i < 20; i++ )
+				var x = 0;
+				var y = 0;
+				var y_before_step = stepped_y;
+				for ( x = 0; x < 20; x++ )
 				{
-					var random_x = Math.floor((Math.random() * 4) + 1);
-					var random_tile_x = get_background_tile(random_x)
-					store_background_tile(i, j, stepped_x, stepped_y, false, random_tile_x);
-					console.log("++++++++++++i: "+i+" ++++++++++++");
-					stepped_x = stepped_x + step;
-					for ( j = 0; j < 20; j++ )
+					if ( stepped_x > final_x )
 					{
-						var random_y = Math.floor((Math.random() * 4) + 1);
-						var random_tile_y = get_background_tile(random_x)
-						store_background_tile(i, j, stepped_x, stepped_y, false, random_tile_y);
-						stepped_y = stepped_y + step;
-						console.log("j: "+j);
+						max_background_x = x;
+						break;
 					}
+					var random_x = Math.floor((Math.random() * 4) + 1);
+					var random_tile_x = get_background_tile(random_x);
+					store_background_tile(x, y, stepped_x, stepped_y, false, random_tile_x);
+					console.log("++++++++++++x: "+x+", "+y+", "+stepped_x+", "+stepped_y+"  ++++++++++++");
+					for ( y = 0; y < 20; y++ )
+					{
+						if ( stepped_y > final_y )
+						{
+							max_background_y = y;
+							break;
+						}
+						var random_y = Math.floor((Math.random() * 4) + 1);
+						var random_tile_y = get_background_tile(random_y)
+						store_background_tile(x, y, stepped_x, stepped_y, false, random_tile_y);
+						console.log("y: "+y);
+						stepped_y = stepped_y + step;
+					}
+					y = 0;
+					stepped_x = stepped_x + step;
+					stepped_y = start_y;
 				}
-				/*for ( j = 0; j < 20; j++ )
+				/*for ( y = 0; y < 20; y++ )
 					{
 						var random_y = Math.floor((Math.random() * 4) + 1);
 						var random_tile_y = get_background_tile(random_x)
-						store_background_tile(0, j, start_x, stepped_y, false, random_tile_y);
+						store_background_tile(0, y, start_x, stepped_y, false, random_tile_y);
 						stepped_y = stepped_y + step;
 				}*/
 				draw_background();
@@ -83,21 +98,43 @@
 			
 			function list_background_tiles()
 			{
-				var i = 0;
-				var j = 0;
-				console.log(background_tiles[0][0]);
-				console.log(background_tiles[0][1]);
-				console.log(background_tiles[0][2]);
-				console.log(background_tiles[1][0]);
-				console.log(background_tiles[1][1]);
-				console.log(background_tiles[1][2]);
-				
-				/*for ( i = 0; i < Object.keys(background_tiles).length; i++ )
+				var x = 0;
+				var y = 0;
+				for ( var x = 0; x < 20; x++ )
 				{
-					console.log(i+","+j+" "+background_tiles[i,j])
-					for ( j = 1; j < Object.keys(background_tiles[i]).length; j++)
+					if ( x == max_background_x )
 					{
-						console.log(i+","+j+" "+background_tiles[i,j])
+						break;
+					}
+					tile = background_tiles[x][y];
+					console.log(x+", "+y);
+					tx = tile[0];
+					ty = tile[1];
+					img = tile[3];
+					console.log("--x: ["+tx+","+ty+"]--");
+					for ( y = 0; y < 20; y++ )
+					{
+						if ( y == max_background_y )
+						{
+							break;
+						}
+						console.log(x+", "+y);
+						tile = background_tiles[x][y];
+						tx = tile[0];
+						ty = tile[1];
+						img = tile[3];
+						console.log("y: ["+tx+","+ty+"]");
+					}
+					y = 0;
+				}
+				
+				
+				/*for ( x = 0; x < Object.keys(background_tiles).length; x++ )
+				{
+					console.log(x+","+y+" "+background_tiles[x,y])
+					for ( y = 1; y < Object.keys(background_tiles[x]).length; y++)
+					{
+						console.log(x+","+y+" "+background_tiles[x,y])
 					}
 				}*/
 			}
@@ -109,24 +146,56 @@
 				var bg_y = 10;
 				bg_canvas = document.getElementById("background_canvas");
 				c = bg_canvas.getContext("2d");
+				var y = 0;
 				
-				for ( var i = 0; i < 20; i++ )
+				/*for ( var x = 0; x < 20; x++ )
 				{
-					tile = background_tiles[i][0];
+					tile = background_tiles[x][y];
 					tx = tile[0];
 					ty = tile[1];
 					img = tile[3];
 					c.drawImage(img, tx, ty, 40, 40);
-				}
-				
-				for ( var j = 0; j < 20; j++ )
+					for ( y = 0; y < 20; y++ )
+					{
+						tile = background_tiles[x][y];
+						tx = tile[0];
+						ty = tile[1];
+						img = tile[3];
+						c.drawImage(img, tx, ty, 40, 40);
+					}
+				}*/
+
+				for ( var x = 0; x < 20; x++ )
 				{
-					tile = background_tiles[0][j];
+					if ( x == max_background_x )
+					{
+						break;
+					}
+					tile = background_tiles[x][y];
+					//console.log(x+", "+y);
 					tx = tile[0];
 					ty = tile[1];
 					img = tile[3];
+					//console.log("--x: ["+tx+","+ty+"]--");
 					c.drawImage(img, tx, ty, 40, 40);
+					for ( y = 0; y < 20; y++ )
+					{
+						if ( y == max_background_y )
+						{
+							break;
+						}
+						//console.log(x+", "+y);
+						tile = background_tiles[x][y];
+						tx = tile[0];
+						ty = tile[1];
+						img = tile[3];
+						//console.log("y: ["+tx+","+ty+"]");
+						c.drawImage(img, tx, ty, 40, 40);
+					}
+					y = 0;
 				}
+				
+				
 				background_tiles = {};
 				/*for ( var count = 0; count < 10; count++ )
 				{
