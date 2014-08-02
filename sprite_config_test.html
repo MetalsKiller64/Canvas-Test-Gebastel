@@ -6,6 +6,7 @@
 		<style>
 			.grid_setup {
 				float: left;
+				background-color: lightgrey;
 /* 				display: inline-block; */
 			}
 			.sprite_map_border {
@@ -77,15 +78,29 @@
 			div.mspf_setup {
 				padding: 10px;
 			}
-			div.pxpf_setup {
+			div.pxps_setup {
 				padding: 10px;
 			}
 			.view_setup_description {
 				display: inline;
 			}
-			table.view_setup_test_arrows td {
+			.player_test {
+				display: inline-block;
+				background-color: #ffff8f;
+			}
+			table.player_test_arrows td {
 				border: 1px solid black;
+				border-radius: 4px;
+				text-align: center;
 				width: 3em;
+			}
+			.player_test_field {
+				float: right;
+				width: 0px;
+				height: 0px;
+				border: 10px solid orange;
+				border-radius: 10px;
+				position: relative;
 			}
 			.test_player {
 				position: absolute;
@@ -99,7 +114,7 @@
 				global_img = new Image();
 				// online image source: http://www.sebissimos.com/gch/index.php?p=features
 				global_img.src = "http://www.sebissimos.com/gch/img/vx_characters.png";
-				global_img.onload = update_grid;
+				global_img.onload = function() { update_grid(); reset_view_setup(); test_player.update_from_ui(); };
 				
 				// Drag'n Drop-Events für das Grid
 				$(".sprite_map_border").on("dragenter", function(event) {
@@ -169,9 +184,10 @@
 				});
 				
 				update_mspf( $(".mspf_range")[0] );
+				update_pxps( $(".pxps_range")[0] );
 				
 				test_player = new TestPlayer();
-				$(".view_setup_test_display").append( test_player.div );
+				$(".player_test_field").append( test_player.div );
 			});
 			
 			var gw = null; var gh = null;
@@ -221,8 +237,8 @@
 				update_grid();
 			}
 			
-			var mspf = 100;
-			var pxpf = 8;
+			var mspf = 200;
+			var pxps = 80;
 			function update_view_result( chain ) {
 				var cel = $(chain).closest("td");
 				var view_result = $( ".view_result", cel );
@@ -280,10 +296,10 @@
 				if( test_player ) test_player.update_from_ui();
 			}
 			
-			function update_pxpf( pxpf_input ) {
-				pxpf = Number( pxpf_input.value );
-				$(".pxpf_range").val( String(pxpf) );
-				$(".pxpf_input").val( String(pxpf) );
+			function update_pxps( pxps_input ) {
+				pxps = Number( pxps_input.value );
+				$(".pxps_range").val( String(pxps) );
+				$(".pxps_input").val( String(pxps) );
 				if( test_player ) test_player.update_from_ui();
 			}
 			
@@ -300,7 +316,7 @@
 					src: null,
 					size: {width: null, height: null},
 					mspf: null,
-					pxpf: null,
+					pxps: null,
 					views: {
 						front: {stand: [], walk: []},
 						left: {stand: [], walk: []},
@@ -313,7 +329,7 @@
 					my.current_config.size.width = mw;
 					my.current_config.size.height = mh;
 					my.current_config.mspf = mspf;
-					my.current_config.pxpf = pxpf;
+					my.current_config.pxps = pxps;
 					for( dir in {front:0,left:0,right:0,back:0} ) {
 						for( action in {stand:0,walk:0} ) {
 							my.current_config.views[dir][action] = [];
@@ -336,7 +352,7 @@
 						interval: null,
 						translation_interval: null
 					},
-					pos: {x:100, y:100} 
+					pos: {x:0, y:0} 
 				}
 				my.update_from_config = function( config ) {
 					if( config ) {
@@ -398,20 +414,22 @@
 						as.step=0;
 					}
 				};
+				my.trans_fps = 25; // Translationen pro Sekunde
 				my.translate = function() {
 					var as = my.state.animation;
 					if( as.action=="walk" ) {
+						var frame_px = my.current_config.pxps / my.trans_fps;
 						if( as.view=="front" ) {
-							my.state.pos.y += 1;
+							my.state.pos.y += frame_px;
 						} else if( as.view=="back" ) {
-							my.state.pos.y -= 1;
+							my.state.pos.y -= frame_px;
 						} else if( as.view=="right" ) {
-							my.state.pos.x += 1;
+							my.state.pos.x += frame_px;
 						} else if( as.view=="left" ) {
-							my.state.pos.x -= 1;
+							my.state.pos.x -= frame_px;
 						}
-						my.div.style.left = my.state.pos.x+"px";
-						my.div.style.top = my.state.pos.y+"px";
+						my.div.style.left = Math.round(my.state.pos.x)+"px";
+						my.div.style.top = Math.round(my.state.pos.y)+"px";
 					}
 				};
 				my.change_animation = function( parms ) {
@@ -428,28 +446,17 @@
 						if( as.translation_interval ) {
 							clearInterval( as.translation_interval );
 						}
-						as.translation_interval = setInterval( my.translate, Math.ceil(my.current_config.mspf/my.current_config.pxpf) );
+						as.translation_interval = setInterval( my.translate, 1000/my.trans_fps );
 					}
 				};
 				my.handle_key_event = function( event ) {
-					if( event.keyCode>=37 && event.keyCode<=40 ) {
+					var view_by_keycode = { 37: "left", 38: "back", 39: "right", 40: "front" };
+					var view = view_by_keycode[ event.keyCode ];
+					if( view ) {
 						event.preventDefault();
 						var action_by_type = { "keydown" : "walk", "keyup" : "stand" };
 						var action = action_by_type[ event.type ];
-						switch( event.keyCode ) {
-							case 37:
-								my.change_animation({view:"left", action:action});
-								break;
-							case 38:
-								my.change_animation({view:"back", action:action});
-								break;
-							case 39:
-								my.change_animation({view:"right", action:action});
-								break;
-							case 40:
-								my.change_animation({view:"front", action:action});
-								break;
-						}
+						my.change_animation( {view:view, action:action} );
 					}
 				};
 				window.addEventListener( 'keydown', my.handle_key_event, true );
@@ -460,7 +467,7 @@
 	<body>
 		<div class="grid_setup">
 			<div class="sprite_map_border">
-				<label>Ziehe eine Animationstafel von deinem Rechner oder aus dem Web in dieses Feld und scheide sie zu!</label>
+				<label>1.) Ziehe eine Animationstafel von deinem Rechner oder aus dem Web in dieses Feld und scheide sie zu!</label>
 				<div class="sprite_map_content">
 				</div>
 			</div>
@@ -481,7 +488,7 @@
 		</div>
 		
 		<div class="view_setup">
-			<div class="view_setup_description">Ziehe Animationsschritte aus der Tafel in diese Sequenztabelle!</div>
+			<div class="view_setup_description">2.) Ziehe Animationsschritte aus der Tafel in diese Sequenztabelle!</div>
 			<table class="view_setup">
 				<tr class="view_setup_heading">
 					<th></th>
@@ -512,21 +519,21 @@
 				</tr>
 			</table>
 			<div class="mspf_setup">
-				<label>Animationsrate:</label><input type="range" class="mspf_range" min="1" max="300" value="100" onchange="update_mspf(this)" />
-				<label>ms/Frame:</label><input type="text" class="mspf_input" onchange="update_mspf(this)" />
+				<label>Animationsrate:</label><input type="range" class="mspf_range" min="1" max="300" value="200" onchange="update_mspf(this)" />
+				<label>ms/Frame: </label><input type="text" class="mspf_input" onchange="update_mspf(this)" size="3" />
 			</div>
-			<div class="pxpf_setup">
-				<label>Schrittgeschw.:</label><input type="range" class="pxpf_range" min="1" max="100" value="8" onchange="update_pxpf(this)" />
-				<label>px/Frame:</label><input type="text" class="pxpf_input" onchange="update_pxpf(this)" />
+			<div class="pxps_setup">
+				<label>Laufgeschwindigkeit:</label><input type="range" class="pxps_range" min="1" max="200" value="80" onchange="update_pxps(this)" />
+				<label>px/s: </label><input type="text" class="pxps_input" onchange="update_pxps(this)" size="3" />
 			</div>
-			<div class="view_setup_test">
-				<div class="view_setup_test_description">Benutze die Pfeiltasten, um deine Animation zu testen!</div>
-				<table class="view_setup_test_arrows">
-					<tr><td style="visibility:hidden"></td><td>▲</td><td style="visibility:hidden"></td></tr>
-					<tr>                         <td>◀</td><td>▼</td><td>▶</td></tr>
-				</table>
-				<div class="view_setup_test_display"></div>
-			</div>
+		</div>
+		<div class="player_test">
+			<div class="player_test_description">3.) Benutze die Pfeiltasten, um deine Animation zu testen!</div>
+			<table class="player_test_arrows">
+				<tr><td style="visibility:hidden"></td><td>▲</td><td style="visibility:hidden"></td></tr>
+				<tr>                         <td>◀</td><td>▼</td><td>▶</td></tr>
+			</table>
+			<div class="player_test_field"></div>
 		</div>
 		
 	</body>
