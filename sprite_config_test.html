@@ -105,6 +105,19 @@
 			.test_player {
 				position: absolute;
 			}
+			.config_serialization {
+				display: block;
+				clear: both;
+				background-color: black;
+			}
+			.config_serialization_head {
+				color: lightgrey;
+			}
+			.config_serialization_content {
+				font-family: monospace;
+				white-space: pre;
+				color: lightgreen;
+			}
 		</style>
 		<script src="js/jquery.js"></script>
 		<script>
@@ -392,6 +405,7 @@
 							}
 						}
 					}
+					$(".config_serialization_content").text( my.write_config() );
 				};
 				my.animate =  function() {
 					var as = my.state.animation;
@@ -459,9 +473,30 @@
 						my.change_animation( {view:view, action:action} );
 					}
 				};
-				window.addEventListener( 'keydown', my.handle_key_event, true );
-				window.addEventListener( 'keyup', my.handle_key_event, true );
+				attach_key_events( null, my );
 			};
+			
+			function load_config( player ) {
+				player = player ? player : test_player;
+				try {
+					var config = JSON.parse( $(".config_serialization_content").text() )
+					player.update_from_config( config )
+				} catch( execption ) {
+					debugger;
+				}
+			}
+			
+			function attach_key_events( evt, player ) {
+				player = player ? player : test_player;
+				window.addEventListener( 'keydown', player.handle_key_event, true );
+				window.addEventListener( 'keyup', player.handle_key_event, true );
+			}
+			
+			function detach_key_events( evt, player ) {
+				player = player ? player : test_player;
+				window.removeEventListener( 'keydown', player.handle_key_event, true );
+				window.removeEventListener( 'keyup', player.handle_key_event, true );
+			}
 		</script>
 	</head>
 	<body>
@@ -535,6 +570,9 @@
 			</table>
 			<div class="player_test_field"></div>
 		</div>
-		
+		<div class="config_serialization">
+			<div class="config_serialization_head">4.) Speichere, Editiere und <button onclick="load_config()">Lade</button> die Konfiguration</div>
+			<div class="config_serialization_content" contentEditable="true" onfocus="detach_key_events()" onblur="attach_key_events()"></div>
+		</div>
 	</body>
 </html>
