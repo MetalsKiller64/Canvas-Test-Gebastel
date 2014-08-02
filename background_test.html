@@ -4,6 +4,34 @@
 			var background_tiles = {};
 			var max_background_x = 0;
 			var max_background_y = 0;
+			var grid = {};
+			
+			function init_grid()
+			{
+				var start_x = 0;
+				var start_y = 0;
+				var y = 0;
+				var step = 40;
+				var key = "";
+				for ( var row = 0; row < 10; row++ )
+				{
+					var x = 0;
+					for ( var col = 0; col < 10; col++ )
+					{
+						key = row+","+col;
+						grid[key] = [x,y];
+						x += step;
+					}
+					y += step;
+				}
+				
+				
+				for ( var key in grid )
+				{
+					console.log(key);
+					console.log(grid[key]);
+				}
+			}
 			
 			function store_background_tile(x_id, y_id, posx, posy, is_solid, img)
 			{
@@ -29,6 +57,25 @@
 				var img_obj = new Image();
 				img_obj.src = "images/grass_tile"+number+".png";
 				return img_obj;
+			}
+			
+			function fill_grid_randomly()
+			{
+				console.log("debug");
+				var bg = document.getElementById("background_canvas");
+				var c = bg.getContext("2d");
+				for ( var key in grid )
+				{
+					var current_field = grid[key];
+					var field_x = current_field[0];
+					var field_y = current_field[1];
+					var random_value = Math.floor((Math.random() * 4) + 1);
+					var random_tile = get_background_tile(random_value);
+					var x_id = key.split(",")[0];
+					var y_id = key.split(",")[1];
+					store_background_tile(x_id, y_id, field_x, field_y, false, random_tile);
+					c.drawImage(random_tile, field_x, field_y, 40, 40);
+				}
 			}
 			
 			function generate_random_background()
@@ -125,6 +172,7 @@
 			
 			function draw_background()
 			{
+				debugger;
 				//TODO: hier soll der Hintergrund mit den ausgewählten background_tiles gemalt werden, dazu muss allerdings das Auswählen der tiles erstmal funzen!
 				var bg_x = 10;
 				var bg_y = 10;
@@ -196,6 +244,31 @@
 				//c.drawImage(bg_image, 10, 10, (6*80), (5*80))
 			}
 			
+			function handle_key_event(evt)
+			{
+				switch(evt.keyCode)
+				{
+					case 37:
+						animation_parts = 8;
+						start_moving("left");
+						break;
+					case 39:
+						animation_parts = 8;
+						start_moving("right");
+						break;
+					case 40:
+						animation_parts = 5;
+						start_moving("down");
+						break;
+					case 38:
+						animation_parts = 5;
+						start_moving("up");
+						break;
+				}
+			}
+			window.addEventListener('keydown', handle_key_event, true);
+
+			
 	 </script>
 	</head>
 	<body>
@@ -205,5 +278,7 @@
 		</div>
 		<button onclick="javascript:generate_random_background()" style="position: absolute; left: 0; top: 500;">generate_random_bg</button>
 		<button onclick="javascript:list_background_tiles()" style="position: absolute; left: 150; top: 500;">list tiles</button>
+		<button onclick="javascript:init_grid()" style="position: absolute; left: 240; top: 500;">grid test</button>
+		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 0; top: 530;">random fill</button>
 	</body>
 </html>
