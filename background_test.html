@@ -1,35 +1,113 @@
 <html>
 	<head>
-	 <script>
+	<script>
 			var background_tiles = {};
 			var max_background_x = 0;
 			var max_background_y = 0;
-			var grid = {};
+			//var grid = {};
+			//var grid_movement_endings = {"up":{"row":9, "col":0}, "down":{"row":0, "col":0}, "left":{"row":9, "col":9}, "right":{"row":9, "col":0}};
+			var grid_from_above = {};
+			var grid_from_below = {};
+			var grid_from_left = {};
+			var grid_from_right = {};
+			var grid_directions = {"up": grid_from_above, "down":grid_from_below, "left":grid_from_left, "right":grid_from_right};
 			
 			function init_grid()
 			{
-				var start_x = 0;
-				var start_y = 0;
 				var y = 0;
 				var step = 40;
 				var key = "";
-				for ( var row = 0; row < 10; row++ )
+				var row = 0;
+				var x = 0;
+				var col = 0;
+				for ( row = 0; row < 10; row++ )
 				{
-					var x = 0;
-					for ( var col = 0; col < 10; col++ )
+					x = 0;
+					for ( col = 0; col < 10; col++ )
 					{
 						key = row+","+col;
-						grid[key] = [x,y];
+						grid_from_above[key] = [x,y];
 						x += step;
 					}
 					y += step;
 				}
 				
-				/*for ( var key in grid )
+				y = 360;
+				key = "";
+				for ( row = 0; row < 10; row++ )
+				{
+					x = 360;
+					for ( col = 0; col < 10; col++ )
+					{
+						key = row+","+col;
+						grid_from_below[key] = [x,y];
+						x -= step;
+					}
+					y -= step;
+				}
+				
+				x = 0;
+				key = "";
+				for ( row = 0; row < 10; row++ )
+				{
+					y = 360;
+					for ( col = 0; col < 10; col++ )
+					{
+						key = row+","+col;
+						grid_from_left[key] = [x,y];
+						y -= step;
+					}
+					x += step;
+				}
+				
+				x = 360;
+				key = "";
+				for ( row = 0; row < 10; row++ )
+				{
+					y = 0;
+					for ( col = 0; col < 10; col++ )
+					{
+						key = row+","+col;
+						grid_from_right[key] = [x,y];
+						y += step;
+					}
+					x -= step;
+				}
+			}
+			
+			function check_grids()
+			{
+				var grid = grid_from_above;
+				console.log(">>>above<<<");
+				for ( var key in grid )
 				{
 					console.log(key);
 					console.log(grid[key]);
-				}*/
+				}
+				
+				var grid = grid_from_below;
+				console.log(">>>below<<<");
+				for ( var key in grid )
+				{
+					console.log(key);
+					console.log(grid[key]);
+				}
+				
+				var grid = grid_from_left;
+				console.log(">>>left<<<");
+				for ( var key in grid )
+				{
+					console.log(key);
+					console.log(grid[key]);
+				}
+				
+				var grid = grid_from_right;
+				console.log(">>>right<<<");
+				for ( var key in grid )
+				{
+					console.log(key);
+					console.log(grid[key]);
+				}
 			}
 			
 			function store_background_tile(key, is_solid, img, override)
@@ -59,8 +137,10 @@
 			
 			function fill_grid_randomly()
 			{
+				debugger;
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
+				var grid = grid_from_above;
 				for ( var key in grid )
 				{
 					var current_field = grid[key];
@@ -79,12 +159,15 @@
 			{
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
-				var row = {"start_row":0, "start_col":0, "end_row":0, "end_col":9};
-				var removed_row = {"start_row":9, "start_col":0, "end_row":9, "end_col":9};
-				var end_row = removed_row["start_row"];
-				var end_col = removed_row["start_col"];
-				var r_start_row = removed_row["start_row"];
-				var r_start_col = removed_row["start_col"];
+				//var row = {"start_row":0, "start_col":0, "end_row":0, "end_col":9};
+				//var removed_row = {"start_row":9, "start_col":0, "end_row":9, "end_col":9};
+				//var end_row = removed_row["start_row"];
+				//var end_col = removed_row["start_col"];
+				//var r_start_row = removed_row["start_row"];
+				//var r_start_col = removed_row["start_col"];
+				var grid = grid_directions[direction];
+				var end_row = 9;
+				var end_col = 0;
 				var end_key = end_row+","+end_col;
 				var row_tiles = {};
 				
@@ -147,12 +230,16 @@
 				switch(evt.keyCode)
 				{
 					case 37:
+						move_background("left");
 						break;
 					case 39:
+						move_background("right");
 						break;
 					case 40:
+						move_background("down");
 						break;
 					case 38:
+						move_background("up");
 						break;
 				}
 			}
@@ -168,6 +255,7 @@
 		</div>
 		<button onclick="javascript:init_grid()" style="position: absolute; left: 0; top: 500;">init grid</button>
 		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 150; top: 500;">fill random</button>
-		<button onclick="javascript:move_background()" style="position: absolute; left: 240; top: 500;">move bg</button>
+		<button onclick="javascript:move_background('up')" style="position: absolute; left: 240; top: 500;">move bg</button>
+		<button onclick="javascript:check_grids()" style="position: absolute; left:0 ; top: 530;">check grids</button>
 	</body>
 </html>
