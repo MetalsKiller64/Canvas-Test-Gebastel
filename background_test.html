@@ -1,5 +1,6 @@
 <html>
 	<head>
+	<script type="text/javascript" src="js/char_movement.js"></script>
 	<script>
 			var background_tiles = {};
 			var max_background_x = 0;
@@ -11,9 +12,15 @@
 			var grid_from_left = {};
 			var grid_from_right = {};
 			var grid_directions = {"up": grid_from_above, "down":grid_from_below, "left":grid_from_left, "right":grid_from_right};
+			var grids_ready = false;
 			
 			function init_grid()
 			{
+				if ( grids_ready )
+				{
+					console.log("die Raster-Objekte sind bereits initialisiert")
+					return;
+				}
 				var y = 0;
 				var step = 40;
 				var key = "";
@@ -73,6 +80,7 @@
 					}
 					x -= step;
 				}
+				grids_ready = true;
 			}
 			
 			function check_grids()
@@ -230,23 +238,27 @@
 				switch(evt.keyCode)
 				{
 					case 37:
-						move_background("left");
+						start_moving("left");
+						//move_background("left");
 						break;
 					case 39:
-						move_background("right");
+						start_moving("right");
+						//move_background("right");
 						break;
 					case 40:
-						move_background("down");
+						start_moving("down");
+						//move_background("down");
 						break;
 					case 38:
-						move_background("up");
+						start_moving("up");
+						//move_background("up");
 						break;
 				}
 			}
 			window.addEventListener('keydown', handle_key_event, true);
 
 			
-	 </script>
+	</script>
 	</head>
 	<body>
 		<div style="position: relative;">
