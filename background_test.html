@@ -1,18 +1,19 @@
 <html>
 	<head>
+	<script src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/char_movement.js"></script>
 	<script>
 			var background_tiles = {};
 			var max_background_x = 0;
 			var max_background_y = 0;
 			//var grid = {};
-			//var grid_movement_endings = {"up":{"row":9, "col":0}, "down":{"row":0, "col":0}, "left":{"row":9, "col":9}, "right":{"row":9, "col":0}};
 			var grid_from_above = {};
 			var grid_from_below = {};
 			var grid_from_left = {};
 			var grid_from_right = {};
 			var grid_directions = {"up": grid_from_above, "down":grid_from_below, "left":grid_from_left, "right":grid_from_right};
 			var grids_ready = false;
+			var free_roaming_area = ["3,3","3,4","3,5","3,6", "4,3","4,4","4,5","4,6", "5,3","5,4","5,5","5,6", "6,3","6,4","6,5","6,6"];
 			
 			function init_grid()
 			{
@@ -145,7 +146,6 @@
 			
 			function fill_grid_randomly()
 			{
-				debugger;
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
 				var grid = grid_from_above;
@@ -158,7 +158,12 @@
 					var random_tile = get_background_tile(random_value);
 					var x_id = key.split(",")[0];
 					var y_id = key.split(",")[1];
-					store_background_tile(key, false, random_tile);
+					if ( $.inArray(key, free_roaming_area) != -1 )
+					{
+						random_tile = new Image();
+						random_tile.src = "images/grass_tile_marked.png";
+					}
+					store_background_tile(key, false, random_tile, true);
 					c.drawImage(random_tile, field_x, field_y, 40, 40);
 				}
 			}
@@ -167,12 +172,6 @@
 			{
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
-				//var row = {"start_row":0, "start_col":0, "end_row":0, "end_col":9};
-				//var removed_row = {"start_row":9, "start_col":0, "end_row":9, "end_col":9};
-				//var end_row = removed_row["start_row"];
-				//var end_col = removed_row["start_col"];
-				//var r_start_row = removed_row["start_row"];
-				//var r_start_col = removed_row["start_col"];
 				var grid = grid_directions[direction];
 				var end_row = 9;
 				var end_col = 0;
@@ -206,7 +205,6 @@
 						{
 							new_tile = saved_tiles[key_row][key_col];
 						}
-						//row_tiles[key] = [grid[key][0], grid[key][1]];
 						
 						store_background_tile(key, false, new_tile, true);
 					}
@@ -221,16 +219,6 @@
 					var fieldy = field[1];
 					c.drawImage(tile_img, fieldx, fieldy, 40, 40);
 				}
-				/*
-				for ( var key in row_tiles )
-				{
-					var current_tile = row_tiles[key];
-					var tile_x = current_tile[0];
-					var tile_y = current_tile[1];
-					var current_tile_img = background_tiles[key][1];
-					c.clearRect(tile_x, tile_y, 40, 40);
-					c.drawImage(random_tile, tile_x, tile_y, 40, 40);
-				}*/
 			}
 			
 			function handle_key_event(evt)
@@ -238,18 +226,22 @@
 				switch(evt.keyCode)
 				{
 					case 37:
+						animation_parts = 8;
 						start_moving("left");
 						//move_background("left");
 						break;
 					case 39:
+						animation_parts = 8;
 						start_moving("right");
 						//move_background("right");
 						break;
 					case 40:
+						animation_parts = 5;
 						start_moving("down");
 						//move_background("down");
 						break;
 					case 38:
+						animation_parts = 5;
 						start_moving("up");
 						//move_background("up");
 						break;
@@ -269,5 +261,6 @@
 		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 150; top: 500;">fill random</button>
 		<button onclick="javascript:move_background('up')" style="position: absolute; left: 240; top: 500;">move bg</button>
 		<button onclick="javascript:check_grids()" style="position: absolute; left:0 ; top: 530;">check grids</button>
+		<button onclick="javascript:test_blah()" style="position: absolute; left:100 ; top: 530;">test</button>
 	</body>
 </html>
