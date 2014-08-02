@@ -25,30 +25,28 @@
 					y += step;
 				}
 				
-				
-				for ( var key in grid )
+				/*for ( var key in grid )
 				{
 					console.log(key);
 					console.log(grid[key]);
-				}
+				}*/
 			}
 			
-			function store_background_tile(x_id, y_id, posx, posy, is_solid, img)
+			function store_background_tile(key, is_solid, img, override)
 			{
 				//Die Tiles werden in einem globalen Dictionary gespeichert, sodass für jedes Tile Koordinaten und andere Eigenschaften zugänglich sind
-				if ( background_tiles[x_id] == undefined ) 
+				if ( background_tiles[key] == undefined ) 
 				{
 					//console.log("debug: store_background_tile: "+x_id+" undefined")
-					background_tiles[x_id] = {};
+					background_tiles[key] = [is_solid, img];
 				}
-				if ( background_tiles[x_id][y_id] == undefined )
+				else if ( override != undefined && override == true )
 				{
-					//console.log("debug: store_background_tile: "+x_id+"|"+y_id+" undefined")
-					background_tiles[x_id][y_id] = [posx, posy, is_solid, img];
+					background_tiles[key] = [is_solid, img];
 				}
 				else
 				{
-					console.log("das tile mit der x_id \""+x_id+"\" und der y_id \""+y_id+"\" existiert bereits!");
+					console.log("das tile mit dem Key \""+key+"\" existiert bereits!");
 				}
 			}
 			
@@ -61,7 +59,6 @@
 			
 			function fill_grid_randomly()
 			{
-				console.log("debug");
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
 				for ( var key in grid )
@@ -73,175 +70,76 @@
 					var random_tile = get_background_tile(random_value);
 					var x_id = key.split(",")[0];
 					var y_id = key.split(",")[1];
-					store_background_tile(x_id, y_id, field_x, field_y, false, random_tile);
+					store_background_tile(key, false, random_tile);
 					c.drawImage(random_tile, field_x, field_y, 40, 40);
 				}
 			}
 			
-			function generate_random_background()
-			{	
-				var start_x = 0;
-				var start_y = 0;
-				var final_x = 480;
-				var final_y = 400;
-				var stepped_x = start_x;
-				var stepped_y = start_y;
-				var step = 40;
-				var x = 0;
-				var y = 0;
-				for ( x = 0; x < 20; x++ )
-				{
-					if ( stepped_x > final_x )
-					{
-						max_background_x = x;
-						break;
-					}
-					var random_x = Math.floor((Math.random() * 4) + 1);
-					var random_tile_x = get_background_tile(random_x);
-					store_background_tile(x, y, stepped_x, stepped_y, false, random_tile_x);
-					console.log("++++++++++++x: "+x+", "+y+", "+stepped_x+", "+stepped_y+"  ++++++++++++");
-					for ( y = 0; y < 20; y++ )
-					{
-						if ( stepped_y > final_y )
-						{
-							max_background_y = y;
-							break;
-						}
-						var random_y = Math.floor((Math.random() * 4) + 1);
-						var random_tile_y = get_background_tile(random_y)
-						store_background_tile(x, y, stepped_x, stepped_y, false, random_tile_y);
-						console.log("y: "+y);
-						stepped_y = stepped_y + step;
-					}
-					y = 0;
-					stepped_x = stepped_x + step;
-					stepped_y = start_y;
-				}
-				/*for ( y = 0; y < 20; y++ )
-					{
-						var random_y = Math.floor((Math.random() * 4) + 1);
-						var random_tile_y = get_background_tile(random_x)
-						store_background_tile(0, y, start_x, stepped_y, false, random_tile_y);
-						stepped_y = stepped_y + step;
-				}*/
-				draw_background();
-			}
-			
-			function list_background_tiles()
+			function move_background(direction)
 			{
-				var x = 0;
-				var y = 0;
-				for ( var x = 0; x < 20; x++ )
+				var bg = document.getElementById("background_canvas");
+				var c = bg.getContext("2d");
+				var row = {"start_row":0, "start_col":0, "end_row":0, "end_col":9};
+				var removed_row = {"start_row":9, "start_col":0, "end_row":9, "end_col":9};
+				var end_row = removed_row["start_row"];
+				var end_col = removed_row["start_col"];
+				var r_start_row = removed_row["start_row"];
+				var r_start_col = removed_row["start_col"];
+				var end_key = end_row+","+end_col;
+				var row_tiles = {};
+				
+				var prev_field = undefined;
+				var prev_row = 0;
+				var saved_tiles = {};
+				for ( var key in grid )
 				{
-					if ( x == max_background_x )
+					var key_row = parseInt(key.split(",")[0]);
+					var key_col = parseInt(key.split(",")[1]);
+					if ( saved_tiles[key_row+1] == undefined )
 					{
-						break;
+						saved_tiles[key_row+1] = {};
 					}
-					tile = background_tiles[x][y];
-					console.log(x+", "+y);
-					tx = tile[0];
-					ty = tile[1];
-					img = tile[3];
-					console.log("--x: ["+tx+","+ty+"]--");
-					for ( y = 0; y < 20; y++ )
+					saved_tiles[key_row+1][key_col] = {};
+					var new_tile = undefined;
+					if (key_row <= end_row)
 					{
-						if ( y == max_background_y )
+						var current_tile = background_tiles[key][1];
+						saved_tiles[key_row+1][key_col] = current_tile;
+						if ( saved_tiles[key_row] == undefined )
 						{
-							break;
+							var random_value = Math.floor((Math.random() * 4) + 1);
+							var random_tile = get_background_tile(random_value);
+							new_tile = random_tile;
 						}
-						console.log(x+", "+y);
-						tile = background_tiles[x][y];
-						tx = tile[0];
-						ty = tile[1];
-						img = tile[3];
-						console.log("y: ["+tx+","+ty+"]");
+						else
+						{
+							new_tile = saved_tiles[key_row][key_col];
+						}
+						//row_tiles[key] = [grid[key][0], grid[key][1]];
+						
+						store_background_tile(key, false, new_tile, true);
 					}
-					y = 0;
 				}
 				
-				
-				/*for ( x = 0; x < Object.keys(background_tiles).length; x++ )
+				for ( key in grid )
 				{
-					console.log(x+","+y+" "+background_tiles[x,y])
-					for ( y = 1; y < Object.keys(background_tiles[x]).length; y++)
-					{
-						console.log(x+","+y+" "+background_tiles[x,y])
-					}
-				}*/
-			}
-			
-			function draw_background()
-			{
-				debugger;
-				//TODO: hier soll der Hintergrund mit den ausgewählten background_tiles gemalt werden, dazu muss allerdings das Auswählen der tiles erstmal funzen!
-				var bg_x = 10;
-				var bg_y = 10;
-				bg_canvas = document.getElementById("background_canvas");
-				c = bg_canvas.getContext("2d");
-				var y = 0;
-				
-				/*for ( var x = 0; x < 20; x++ )
-				{
-					tile = background_tiles[x][y];
-					tx = tile[0];
-					ty = tile[1];
-					img = tile[3];
-					c.drawImage(img, tx, ty, 40, 40);
-					for ( y = 0; y < 20; y++ )
-					{
-						tile = background_tiles[x][y];
-						tx = tile[0];
-						ty = tile[1];
-						img = tile[3];
-						c.drawImage(img, tx, ty, 40, 40);
-					}
-				}*/
-
-				for ( var x = 0; x < 20; x++ )
-				{
-					if ( x == max_background_x )
-					{
-						break;
-					}
-					tile = background_tiles[x][y];
-					//console.log(x+", "+y);
-					tx = tile[0];
-					ty = tile[1];
-					img = tile[3];
-					//console.log("--x: ["+tx+","+ty+"]--");
-					c.drawImage(img, tx, ty, 40, 40);
-					for ( y = 0; y < 20; y++ )
-					{
-						if ( y == max_background_y )
-						{
-							break;
-						}
-						//console.log(x+", "+y);
-						tile = background_tiles[x][y];
-						tx = tile[0];
-						ty = tile[1];
-						img = tile[3];
-						//console.log("y: ["+tx+","+ty+"]");
-						c.drawImage(img, tx, ty, 40, 40);
-					}
-					y = 0;
+					var tile = background_tiles[key];
+					var tile_img = tile[1];
+					var field = grid[key];
+					var fieldx = field[0];
+					var fieldy = field[1];
+					c.drawImage(tile_img, fieldx, fieldy, 40, 40);
 				}
-				
-				
-				background_tiles = {};
-				/*for ( var count = 0; count < 10; count++ )
+				/*
+				for ( var key in row_tiles )
 				{
-					if ( count != 0 )
-					{
-						bg_x = bg_x + 40;
-					}
-					var img = load_background_image()
-					
-					c.drawImage(img, bg_x, bg_y, 40, 40);
+					var current_tile = row_tiles[key];
+					var tile_x = current_tile[0];
+					var tile_y = current_tile[1];
+					var current_tile_img = background_tiles[key][1];
+					c.clearRect(tile_x, tile_y, 40, 40);
+					c.drawImage(random_tile, tile_x, tile_y, 40, 40);
 				}*/
-				//bg_image = new Image();
-				//bg_image.src = background1;
-				//c.drawImage(bg_image, 10, 10, (6*80), (5*80))
 			}
 			
 			function handle_key_event(evt)
@@ -249,20 +147,12 @@
 				switch(evt.keyCode)
 				{
 					case 37:
-						animation_parts = 8;
-						start_moving("left");
 						break;
 					case 39:
-						animation_parts = 8;
-						start_moving("right");
 						break;
 					case 40:
-						animation_parts = 5;
-						start_moving("down");
 						break;
 					case 38:
-						animation_parts = 5;
-						start_moving("up");
 						break;
 				}
 			}
@@ -276,9 +166,8 @@
 			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
 			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
 		</div>
-		<button onclick="javascript:generate_random_background()" style="position: absolute; left: 0; top: 500;">generate_random_bg</button>
-		<button onclick="javascript:list_background_tiles()" style="position: absolute; left: 150; top: 500;">list tiles</button>
-		<button onclick="javascript:init_grid()" style="position: absolute; left: 240; top: 500;">grid test</button>
-		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 0; top: 530;">random fill</button>
+		<button onclick="javascript:init_grid()" style="position: absolute; left: 0; top: 500;">init grid</button>
+		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 150; top: 500;">fill random</button>
+		<button onclick="javascript:move_background()" style="position: absolute; left: 240; top: 500;">move bg</button>
 	</body>
 </html>
