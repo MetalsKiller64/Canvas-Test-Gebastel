@@ -50,6 +50,18 @@
 			table.view_setup {
 				width: 100%;
 			}
+			.view_symbol {
+				font-size: large;
+			}
+			.front_symbol {
+				transform: rotate(90deg);
+			}
+			.left_symbol {
+				transform: rotate(180deg);
+			}
+			.back_symbol {
+				transform: rotate(270deg);
+			}
 			table.view_setup div {
 				display: inline-block;
 				min-width: 32px;
@@ -294,23 +306,23 @@
 					<th><button onclick="reset_view_setup()">löschen</button></th>
 				</tr>
 				<tr class="view_front">
-					<td class="front_symbol">\/</td>
+					<td class="view_symbol front_symbol">➤</td>
 					<td class="front_stand"><div class="view_result front_stand_result"></div><div class="view_chain front_stand_chain"></div></td>
 					<td class="front_walk"><div class="view_result front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
 					<td class="view_delete" rowspan="4">X</td>
 				</tr>
 				<tr class="view_left">
-					<td class="left_symbol">&lt;</td>
+					<td class="view_symbol left_symbol">➤</td>
 					<td class="left_stand"><div class="view_result left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
 					<td class="left_walk"><div class="view_result left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
 				</tr>
 				<tr class="view_right">
-					<td class="right_symbol">&gt;</td>
+					<td class="view_symbol right_symbol">➤</td>
 					<td class="right_stand"><div class="view_result right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
 					<td class="right_walk"><div class="view_result right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
 				</tr>
 				<tr class="view_back">
-					<td class="back_symbol">/\</td>
+					<td class="view_symbol back_symbol">➤</td>
 					<td class="back_stand"><div class="view_result back_stand_result"></div><div class="view_chain back_stand_chain"></div></td>
 					<td class="back_walk"><div class="view_result back_walk_result"></div><div class="view_chain back_walk_chain"></div></td>
 				</tr>
