@@ -9,9 +9,19 @@
 /* 				display: inline-block; */
 			}
 			.sprite_map_border {
+				position: relative;
 				display: inline-block;
-				padding: 50px;
+				padding: 60px;
 				background-color: grey;
+			}
+			.sprite_map_border label {
+				color: white;
+				position: absolute;
+				font-size: tiny;
+				left: 2px;
+				top: 2px;
+			}
+			.sprite_map_content {
 			}
 			table.grid {
 				left: 0;
@@ -22,9 +32,23 @@
 			table.grid, table.grid th, table.grid td {
 				border: 1px solid red;
 			}
+			.grid_dimensions {
+				text-align: right;
+				padding-right: 20px;
+			}
 			div.view_setup {
 				display: inline-block;
 				background-color: lightblue;
+				text-align: center;
+			}
+			.view_setup_description {
+				font-size: tiny;
+				text-align: center;
+				color: black;
+				font-weight: normal;
+			}
+			table.view_setup {
+				width: 100%;
 			}
 			table.view_setup div {
 				display: inline-block;
@@ -55,8 +79,35 @@
 			var img = null;
 			$(document).ready( function() {
 				img = new Image();
-				img.src = "images/chica_pepsi.png";
+				// online image source: http://www.sebissimos.com/gch/index.php?p=features
+				img.src = "http://www.sebissimos.com/gch/img/vx_characters.png";
 				img.onload = update_grid;
+				
+				// Drag'n Drop-Events für das Grid
+				$(".sprite_map_border").on("dragenter", function(event) {
+					event.preventDefault();
+				});
+				$(".sprite_map_border").on("dragover", function(event) {
+					event.preventDefault();
+				});
+				$(".sprite_map_border").on("drop", function(event) {
+					event.preventDefault();
+					var dt = event.originalEvent.dataTransfer;
+					if( dt.files && dt.files.length ) {
+						// inspired by: http://robertnyman.com/html5/canvas/the-cure.html
+						var file = dt.files[0];
+						if( typeof FileReader !== "undefined" && file.type.indexOf("image") != -1 ) {
+							var reader = new FileReader();
+							// Note: addEventListener doesn't work in Google Chrome for this event
+							reader.onload = function (evt) {
+								img.src = evt.target.result;
+							};
+							reader.readAsDataURL(file);
+						}
+					} else if( dt.getData("url") ) {
+						img.src = dt.getData("url");
+					}
+				});
 				
 				// Drag'n Drop-Events für die Animationstabelle
 				$(".view_chain").on("dragenter", function(event) {
@@ -201,33 +252,46 @@
 					update_result_interval( view_result );
 				});
 			}
+			
+			function reset_view_setup() {
+				$(".view_chain").each( function(i,chain) {
+					$(chain).empty();
+					update_view_result( chain );
+				});
+			}
 		</script>
 	</head>
 	<body>
 		<div class="grid_setup">
 			<div class="sprite_map_border">
+				<label>Ziehe eine Animationstafel von deinem Rechner oder aus dem Web in dieses Feld und scheide sie zu!</label>
 				<div class="sprite_map_content">
 				</div>
 			</div>
-			<div class="grid_width">
-				<button class="grid_width_minus" onclick="grid_change('width',-1)">-</button>
-				<input class="grid_width_input" type="text" value="3" onchange="update_grid()" />
-				<button class="grid_width_plus" onclick="grid_change('width',+1)">+</button>
-			</div>
-			<div class="grid_height">
-				<button class="grid_height_minus" onclick="grid_change('height',-1)">-</button>
-				<input class="grid_height_input" type="text" value="4" onchange="update_grid()" />
-				<button class="grid_height_plus" onclick="grid_change('height',+1)">+</button>
+			<div class="grid_dimensions">
+				<div class="grid_width">
+					<label>Spalten:</label>
+					<button class="grid_width_minus" onclick="grid_change('width',-1)">-</button>
+					<input class="grid_width_input" type="text" size="2" value="12" onchange="update_grid()" />
+					<button class="grid_width_plus" onclick="grid_change('width',+1)">+</button>
+				</div>
+				<div class="grid_height">
+					<label>Zeilen:</label>
+					<button class="grid_height_minus" onclick="grid_change('height',-1)">-</button>
+					<input class="grid_height_input" type="text" size="2" value="8" onchange="update_grid()" />
+					<button class="grid_height_plus" onclick="grid_change('height',+1)">+</button>
+				</div>
 			</div>
 		</div>
 		
 		<div class="view_setup">
+			<div class="view_setup_description">Ziehe Animationsschritte aus der Tafel in diese Sequenztabelle!</div>
 			<table class="view_setup">
-				<tr class="view_heading">
+				<tr class="view_setup_heading">
 					<th></th>
 					<th>stehen</th>
 					<th>gehen</th>
-					<th>löschen</th>
+					<th><button onclick="reset_view_setup()">löschen</button></th>
 				</tr>
 				<tr class="view_front">
 					<td class="front_symbol">\/</td>
@@ -235,15 +299,15 @@
 					<td class="front_walk"><div class="view_result front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
 					<td class="view_delete" rowspan="4">X</td>
 				</tr>
-				<tr class="view_right">
-					<td class="right_symbol">&gt;</td>
-					<td class="right_stand"><div class="view_result right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
-					<td class="right_walk"><div class="view_result right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
-				</tr>
 				<tr class="view_left">
 					<td class="left_symbol">&lt;</td>
 					<td class="left_stand"><div class="view_result left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
 					<td class="left_walk"><div class="view_result left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
+				</tr>
+				<tr class="view_right">
+					<td class="right_symbol">&gt;</td>
+					<td class="right_stand"><div class="view_result right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
+					<td class="right_walk"><div class="view_result right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
 				</tr>
 				<tr class="view_back">
 					<td class="back_symbol">/\</td>
@@ -252,7 +316,7 @@
 				</tr>
 			</table>
 			<div class="mspf_setup">
-				<input type="range" class="mspf_range" min="1" max="200" value="100" onchange="update_mspf(this)" />
+				<input type="range" class="mspf_range" min="1" max="300" value="100" onchange="update_mspf(this)" />
 				ms/Frame: <input type="text" class="mspf_input" onchange="update_mspf(this)" />
 			</div>
 		</div>
