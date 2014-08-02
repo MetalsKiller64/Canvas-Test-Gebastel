@@ -49,18 +49,10 @@
 			}
 			table.view_setup {
 				width: 100%;
+				text-align: left;
 			}
 			.view_symbol {
 				font-size: large;
-			}
-			.front_symbol {
-				transform: rotate(90deg);
-			}
-			.left_symbol {
-				transform: rotate(180deg);
-			}
-			.back_symbol {
-				transform: rotate(270deg);
 			}
 			table.view_setup div {
 				display: inline-block;
@@ -85,15 +77,29 @@
 			div.mspf_setup {
 				padding: 10px;
 			}
+			div.pxpf_setup {
+				padding: 10px;
+			}
+			.view_setup_description {
+				display: inline;
+			}
+			table.view_setup_test_arrows td {
+				border: 1px solid black;
+				width: 3em;
+			}
+			.test_player {
+				position: absolute;
+			}
 		</style>
 		<script src="js/jquery.js"></script>
 		<script>
-			var img = null;
+			var global_img = null;
+			var test_player = null;
 			$(document).ready( function() {
-				img = new Image();
+				global_img = new Image();
 				// online image source: http://www.sebissimos.com/gch/index.php?p=features
-				img.src = "http://www.sebissimos.com/gch/img/vx_characters.png";
-				img.onload = update_grid;
+				global_img.src = "http://www.sebissimos.com/gch/img/vx_characters.png";
+				global_img.onload = update_grid;
 				
 				// Drag'n Drop-Events für das Grid
 				$(".sprite_map_border").on("dragenter", function(event) {
@@ -112,12 +118,12 @@
 							var reader = new FileReader();
 							// Note: addEventListener doesn't work in Google Chrome for this event
 							reader.onload = function (evt) {
-								img.src = evt.target.result;
+								global_img.src = evt.target.result;
 							};
 							reader.readAsDataURL(file);
 						}
 					} else if( dt.getData("url") ) {
-						img.src = dt.getData("url");
+						global_img.src = dt.getData("url");
 					}
 				});
 				
@@ -137,6 +143,7 @@
 					$(clone_canvas).on("dragstart", function(event) {
 						event.originalEvent.dataTransfer.setData("text/plain",this);
 					});
+					$(clone_canvas).data( {tileinfo: $(canvas).data().tileinfo} );
 					var ctx = clone_canvas.getContext("2d");
 					ctx.drawImage( canvas, 0, 0 );
 					$(this).append( clone_canvas );
@@ -162,6 +169,9 @@
 				});
 				
 				update_mspf( $(".mspf_range")[0] );
+				
+				test_player = new TestPlayer();
+				$(".view_setup_test_display").append( test_player.div );
 			});
 			
 			var gw = null; var gh = null;
@@ -173,17 +183,19 @@
 				var grid = $("<table>");
 				gw = Number($(".grid_width_input").val());
 				gh = Number($(".grid_height_input").val());
-				mw = img.width; 
-				mh = img.height;
+				mw = global_img.width; 
+				mh = global_img.height;
 				pw = Math.floor(mw/gw);
 				ph = Math.floor(mh/gh);
 				for( h=0; h<gh; h++ ) {
 					var row = $("<tr>");
 					for( w=0; w<gw; w++ ) {
+						var tile = {x:w*pw, y:h*ph, w:pw, h:ph}
 						var cel = $("<td>").attr( {} );
-						var canvas = $("<canvas>").attr( {width:pw,height:ph,draggable:true} );
+						var canvas = $("<canvas>").attr( {width:tile.w,height:tile.h,draggable:true} );
 						var ctx = canvas[0].getContext("2d");
-						ctx.drawImage( img, w*pw, h*ph, pw, ph, 0, 0, pw, ph );
+						ctx.drawImage( global_img, tile.x, tile.y, tile.w, tile.h, 0, 0, tile.w, tile.h);
+						canvas.data( {tileinfo: tile} );
 						canvas.on("dragstart", function(event) {
 							event.originalEvent.dataTransfer.setData("text/plain",this);
 						});
@@ -210,6 +222,7 @@
 			}
 			
 			var mspf = 100;
+			var pxpf = 8;
 			function update_view_result( chain ) {
 				var cel = $(chain).closest("td");
 				var view_result = $( ".view_result", cel );
@@ -228,6 +241,7 @@
 					view_result.append( clone_canvas );
 				});
 				update_result_interval( view_result[0], 0 );
+				test_player.update_from_ui();
 			}
 			
 			function update_result_interval( view_result, next_animation_step ) {
@@ -263,6 +277,14 @@
 				$("div.view_result").each( function(i,view_result) {
 					update_result_interval( view_result );
 				});
+				if( test_player ) test_player.update_from_ui();
+			}
+			
+			function update_pxpf( pxpf_input ) {
+				pxpf = Number( pxpf_input.value );
+				$(".pxpf_range").val( String(pxpf) );
+				$(".pxpf_input").val( String(pxpf) );
+				if( test_player ) test_player.update_from_ui();
 			}
 			
 			function reset_view_setup() {
@@ -271,6 +293,168 @@
 					update_view_result( chain );
 				});
 			}
+			
+			var TestPlayer = function() {
+				var my = this;
+				my.current_config = {
+					src: null,
+					size: {width: null, height: null},
+					mspf: null,
+					pxpf: null,
+					views: {
+						front: {stand: [], walk: []},
+						left: {stand: [], walk: []},
+						right: {stand: [], walk: []},
+						back: {stand: [], walk: []}
+					}
+				};
+				my.update_from_ui = function() {
+					my.current_config.src = global_img.src;
+					my.current_config.size.width = mw;
+					my.current_config.size.height = mh;
+					my.current_config.mspf = mspf;
+					my.current_config.pxpf = pxpf;
+					for( dir in {front:0,left:0,right:0,back:0} ) {
+						for( action in {stand:0,walk:0} ) {
+							my.current_config.views[dir][action] = [];
+							$( "canvas.view_chain_element", $("."+dir+"_"+action+"_chain")[0] ).each( function(e,canvas) {
+								my.current_config.views[dir][action].push( $(canvas).data().tileinfo );
+							});
+						}
+					}
+					my.update_from_config();
+				};
+				my.write_config = function() {
+					return JSON.stringify( my.current_config, null, "\t" );
+				};
+				my.div = $("<div>").attr( {class:"test_player"} )[0];
+				my.state = { 
+					animation: {
+						view: "front", 
+						action: "stand", 
+						step: 0, 
+						interval: null,
+						translation_interval: null
+					},
+					pos: {x:100, y:100} 
+				}
+				my.update_from_config = function( config ) {
+					if( config ) {
+						my.current_config = config;
+					}
+					$(my.div).empty();
+					my.img = new Image();
+					my.img.src = my.current_config.src;
+					my.img.onload = function() {
+						my.buffers = {};
+						for( view in my.current_config.views ) {
+							my.buffers[view] = {};
+							for( action in my.current_config.views[view] ) {
+								my.buffers[view][action] = [];
+								for( pos in my.current_config.views[view][action] ) {
+									var tile = my.current_config.views[view][action][pos];
+									if( !tile ) break;
+									var canvas = $("<canvas>").attr( {width:tile.w,height:tile.h} );
+									canvas[0].style.display = "none";
+									var ctx = canvas[0].getContext("2d");
+									ctx.drawImage( my.img, tile.x, tile.y, tile.w, tile.h, 0, 0, tile.w, tile.h );
+									canvas.data( {tileinfo: tile} );
+									$(my.div).append( canvas[0] );
+									my.buffers[view][action].push( canvas[0] );
+									//my.change_animation( {view: view, action: action} );
+								}
+								if( my.buffers[view][action].length==0 ) {
+									// Rot eingefärbte Ersatzfläche für fehlende Animationssequenz:
+									var canvas = $("<canvas>").attr( {width:pw, height:ph} );
+									canvas[0].style.display = "none";
+									var ctx = canvas[0].getContext("2d");
+									ctx.fillStyle = "rgb(255,0,0)";
+									ctx.fillRect( 0, 0, pw, ph );
+									$(my.div).append( canvas[0] );
+									my.buffers[view][action].push( canvas[0] );
+								}
+							}
+						}
+					}
+				};
+				my.animate =  function() {
+					var as = my.state.animation;
+					var used_seq = [];
+					for( view in my.buffers ) {
+						for( action in my.buffers[view] ) {
+							var seq = my.buffers[view][action];
+							for( pos in seq ) {
+								if( view==as.view && action==as.action && pos==as.step ) {
+									seq[pos].style.display="";
+									used_seq = seq;
+								} else {
+									seq[pos].style.display="none";
+								}
+							}
+						}
+					}
+					as.step += 1;
+					if( as.step>=used_seq.length ) {
+						as.step=0;
+					}
+				};
+				my.translate = function() {
+					var as = my.state.animation;
+					if( as.action=="walk" ) {
+						if( as.view=="front" ) {
+							my.state.pos.y += 1;
+						} else if( as.view=="back" ) {
+							my.state.pos.y -= 1;
+						} else if( as.view=="right" ) {
+							my.state.pos.x += 1;
+						} else if( as.view=="left" ) {
+							my.state.pos.x -= 1;
+						}
+						my.div.style.left = my.state.pos.x+"px";
+						my.div.style.top = my.state.pos.y+"px";
+					}
+				};
+				my.change_animation = function( parms ) {
+					var as = my.state.animation;
+					if( as.view != parms.view || as.action != parms.action ) {
+						as.view = parms.view;
+						as.action = parms.action;
+						as.step = 0;
+						my.animate();
+						if( as.interval ) {
+							clearInterval( as.interval );
+						}
+						as.interval = setInterval( my.animate, my.current_config.mspf );
+						if( as.translation_interval ) {
+							clearInterval( as.translation_interval );
+						}
+						as.translation_interval = setInterval( my.translate, Math.ceil(my.current_config.mspf/my.current_config.pxpf) );
+					}
+				};
+				my.handle_key_event = function( event ) {
+					if( event.keyCode>=37 && event.keyCode<=40 ) {
+						event.preventDefault();
+						var action_by_type = { "keydown" : "walk", "keyup" : "stand" };
+						var action = action_by_type[ event.type ];
+						switch( event.keyCode ) {
+							case 37:
+								my.change_animation({view:"left", action:action});
+								break;
+							case 38:
+								my.change_animation({view:"back", action:action});
+								break;
+							case 39:
+								my.change_animation({view:"right", action:action});
+								break;
+							case 40:
+								my.change_animation({view:"front", action:action});
+								break;
+						}
+					}
+				};
+				window.addEventListener( 'keydown', my.handle_key_event, true );
+				window.addEventListener( 'keyup', my.handle_key_event, true );
+			};
 		</script>
 	</head>
 	<body>
@@ -306,31 +490,44 @@
 					<th><button onclick="reset_view_setup()">löschen</button></th>
 				</tr>
 				<tr class="view_front">
-					<td class="view_symbol front_symbol">➤</td>
+					<td class="view_symbol front_symbol">▼</td>
 					<td class="front_stand"><div class="view_result front_stand_result"></div><div class="view_chain front_stand_chain"></div></td>
 					<td class="front_walk"><div class="view_result front_walk_result"></div><div class="view_chain front_walk_chain"></div></td>
 					<td class="view_delete" rowspan="4">X</td>
 				</tr>
 				<tr class="view_left">
-					<td class="view_symbol left_symbol">➤</td>
+					<td class="view_symbol left_symbol">◀</td>
 					<td class="left_stand"><div class="view_result left_stand_result"></div><div class="view_chain left_stand_chain"></div></td>
 					<td class="left_walk"><div class="view_result left_walk_result"></div><div class="view_chain left_walk_chain"></div></td>
 				</tr>
 				<tr class="view_right">
-					<td class="view_symbol right_symbol">➤</td>
+					<td class="view_symbol right_symbol">▶</td>
 					<td class="right_stand"><div class="view_result right_stand_result"></div><div class="view_chain right_stand_chain"></div></td>
 					<td class="right_walk"><div class="view_result right_walk_result"></div><div class="view_chain right_walk_chain"></div></td>
 				</tr>
 				<tr class="view_back">
-					<td class="view_symbol back_symbol">➤</td>
+					<td class="view_symbol back_symbol">▲</td>
 					<td class="back_stand"><div class="view_result back_stand_result"></div><div class="view_chain back_stand_chain"></div></td>
 					<td class="back_walk"><div class="view_result back_walk_result"></div><div class="view_chain back_walk_chain"></div></td>
 				</tr>
 			</table>
 			<div class="mspf_setup">
-				<input type="range" class="mspf_range" min="1" max="300" value="100" onchange="update_mspf(this)" />
-				ms/Frame: <input type="text" class="mspf_input" onchange="update_mspf(this)" />
+				<label>Animationsrate:</label><input type="range" class="mspf_range" min="1" max="300" value="100" onchange="update_mspf(this)" />
+				<label>ms/Frame:</label><input type="text" class="mspf_input" onchange="update_mspf(this)" />
+			</div>
+			<div class="pxpf_setup">
+				<label>Schrittgeschw.:</label><input type="range" class="pxpf_range" min="1" max="100" value="8" onchange="update_pxpf(this)" />
+				<label>px/Frame:</label><input type="text" class="pxpf_input" onchange="update_pxpf(this)" />
+			</div>
+			<div class="view_setup_test">
+				<div class="view_setup_test_description">Benutze die Pfeiltasten, um deine Animation zu testen!</div>
+				<table class="view_setup_test_arrows">
+					<tr><td style="visibility:hidden"></td><td>▲</td><td style="visibility:hidden"></td></tr>
+					<tr>                         <td>◀</td><td>▼</td><td>▶</td></tr>
+				</table>
+				<div class="view_setup_test_display"></div>
 			</div>
 		</div>
+		
 	</body>
 </html>
