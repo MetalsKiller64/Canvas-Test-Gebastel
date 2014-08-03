@@ -38,9 +38,10 @@
 				padding-right: 20px;
 			}
 			div.view_setup {
-				display: inline-block;
+/* 				display: inline-block; */
 				background-color: lightblue;
-				text-align: center;
+/* 				text-align: center; */
+				padding: 1em;
 			}
 			.view_setup_description {
 				font-size: tiny;
@@ -49,7 +50,7 @@
 				font-weight: normal;
 			}
 			table.view_setup {
-				width: 100%;
+/* 				width: 100%; */
 				text-align: left;
 			}
 			.view_symbol {
@@ -85,8 +86,12 @@
 				display: inline;
 			}
 			.player_test {
-				display: inline-block;
 				background-color: #ffff8f;
+/* 				clear: both; */
+				padding: 1em;
+			}
+			table.player_test_arrows {
+				display: inline-block;
 			}
 			table.player_test_arrows td {
 				border: 1px solid black;
@@ -95,7 +100,7 @@
 				width: 3em;
 			}
 			.player_test_field {
-				float: right;
+				display: inline-block;
 				width: 0px;
 				height: 0px;
 				border: 10px solid orange;
@@ -109,14 +114,22 @@
 				display: block;
 				clear: both;
 				background-color: black;
+				padding: 1em;
 			}
 			.config_serialization_head {
 				color: lightgrey;
+			}
+			.config_serialization_error {
+				font-family: monospace;
+				white-space: pre;
+				color: pink;
 			}
 			.config_serialization_content {
 				font-family: monospace;
 				white-space: pre;
 				color: lightgreen;
+				width: 100%;
+				overflow: auto;
 			}
 		</style>
 		<script src="js/jquery.js"></script>
@@ -162,22 +175,7 @@
 				$(".view_chain").on("dragover", function(event) {
 					event.preventDefault();
 				});
-				$(".view_chain").on("drop", function(event) {
-					event.preventDefault();
-					var canvas = event.originalEvent.dataTransfer.mozSourceNode;
-					var clone_canvas = $(canvas).clone()[0];
-					$(clone_canvas).addClass( "view_chain_element" );
-					$(clone_canvas).attr( {draggable:true} );
-					$(clone_canvas).on("dragstart", function(event) {
-						event.originalEvent.dataTransfer.setData("text/plain",this);
-					});
-					$(clone_canvas).data( {tileinfo: $(canvas).data().tileinfo} );
-					var ctx = clone_canvas.getContext("2d");
-					ctx.drawImage( canvas, 0, 0 );
-					$(this).append( clone_canvas );
-					
-					update_view_result( this );
-				});
+				$(".view_chain").on("drop", drop_tile);
 				
 				// Drag'n Drop-Events für das Löschfeld
 				$(".view_delete").on("dragenter", function(event) {
@@ -226,7 +224,7 @@
 						ctx.drawImage( global_img, tile.x, tile.y, tile.w, tile.h, 0, 0, tile.w, tile.h);
 						canvas.data( {tileinfo: tile} );
 						canvas.on("dragstart", function(event) {
-							event.originalEvent.dataTransfer.setData("text/plain",this);
+							event.originalEvent.dataTransfer.setData("text/plain","dummy");
 						});
 						cel.append( canvas );
 						row.append( cel );
@@ -273,6 +271,25 @@
 				test_player.update_from_ui();
 			}
 			
+			function drop_tile( event, dest ) {
+				dest = dest ? dest : this,
+				event.preventDefault();
+				var canvas = event.originalEvent.dataTransfer.mozSourceNode;
+				var clone_canvas = $(canvas).clone()[0];
+				$(clone_canvas).addClass( "view_chain_element" );
+				$(clone_canvas).attr( {draggable:true} );
+				$(clone_canvas).on("dragstart", function(event) {
+					event.originalEvent.dataTransfer.setData("text/plain","dummy");
+				});
+				$(clone_canvas).data( {tileinfo: $(canvas).data().tileinfo} );
+				clone_canvas.style.display=""; // kann bei Rückwärtsbeladung aus Config "none" sein
+				var ctx = clone_canvas.getContext("2d");
+				ctx.drawImage( canvas, 0, 0 );
+				$(dest).append( clone_canvas );
+				
+				update_view_result( dest );
+			}
+				
 			function update_result_interval( view_result, next_animation_step ) {
 				if( $(view_result).data().interval ) {
 					clearInterval( $(view_result).data().interval );
@@ -328,6 +345,7 @@
 				my.current_config = {
 					src: null,
 					size: {width: null, height: null},
+					grid: {width: null, height: null},
 					mspf: null,
 					pxps: null,
 					views: {
@@ -337,22 +355,56 @@
 						back: {stand: [], walk: []}
 					}
 				};
+				my.update_lock = false;
 				my.update_from_ui = function() {
-					my.current_config.src = global_img.src;
-					my.current_config.size.width = mw;
-					my.current_config.size.height = mh;
-					my.current_config.mspf = mspf;
-					my.current_config.pxps = pxps;
-					for( dir in {front:0,left:0,right:0,back:0} ) {
-						for( action in {stand:0,walk:0} ) {
-							my.current_config.views[dir][action] = [];
-							$( "canvas.view_chain_element", $("."+dir+"_"+action+"_chain")[0] ).each( function(e,canvas) {
-								my.current_config.views[dir][action].push( $(canvas).data().tileinfo );
-							});
+					if( !my.update_lock ) {
+						my.update_lock = true;
+						my.current_config.src = global_img.src;
+						my.current_config.size.width = mw;
+						my.current_config.size.height = mh;
+						my.current_config.grid.width = gw;
+						my.current_config.grid.height = gh;
+						my.current_config.mspf = mspf;
+						my.current_config.pxps = pxps;
+						for( dir in {front:0,left:0,right:0,back:0} ) {
+							for( action in {stand:0,walk:0} ) {
+								my.current_config.views[dir][action] = [];
+								$( "canvas.view_chain_element", $("."+dir+"_"+action+"_chain")[0] ).each( function(e,canvas) {
+									my.current_config.views[dir][action].push( $(canvas).data().tileinfo );
+								});
+							}
 						}
+						my.update_from_config();
+						my.update_lock = false;
 					}
-					my.update_from_config();
 				};
+				my.update_ui_from_config = function() {
+					if( !my.update_lock ) {
+						my.update_lock = true;
+						$(".grid_width_input").val( my.current_config.grid.width );
+						$(".grid_height_input").val( my.current_config.grid.height );
+						update_mspf( {value: my.current_config.mspf} );
+						update_pxps( {value: my.current_config.pxps} );
+						var prev_onload = global_img.onload;
+						global_img.onload = function() {
+							update_grid();
+							reset_view_setup();
+							for( view in my.buffers ) {
+								for( action in my.buffers[view] ) {
+									for( pos in my.buffers[view][action] ) {
+										var canvas = my.buffers[view][action][pos];
+										if( $(canvas).data().tileinfo ) {
+											drop_tile( {preventDefault: function(){}, originalEvent: {dataTransfer: {mozSourceNode: canvas}}}, $("."+view+"_"+action+"_chain")[0] )
+										}
+									}
+								}
+							}
+							my.update_lock = false;
+							global_img.onload = prev_onload;
+						}
+						global_img.src = my.current_config.src;
+					}
+				}
 				my.write_config = function() {
 					return JSON.stringify( my.current_config, null, "\t" );
 				};
@@ -479,10 +531,17 @@
 			function load_config( player ) {
 				player = player ? player : test_player;
 				try {
-					var config = JSON.parse( $(".config_serialization_content").text() )
-					player.update_from_config( config )
-				} catch( execption ) {
-					debugger;
+					var config = JSON.parse( $(".config_serialization_content").text() );
+					player.update_from_config( config );
+					player.update_ui_from_config();
+					$(".config_serialization_error").empty();
+				} catch( exception ) {
+					// http://stackoverflow.com/questions/18391212/is-it-not-possible-to-stringify-an-error-using-json-stringify
+					var plainObject = {};
+					Object.getOwnPropertyNames(exception).forEach(function(key) {
+						plainObject[key] = exception[key];
+					});
+					$(".config_serialization_error").text( JSON.stringify(plainObject, null, "\t") );
 				}
 			}
 			
@@ -572,6 +631,7 @@
 		</div>
 		<div class="config_serialization">
 			<div class="config_serialization_head">4.) Speichere, Editiere und <button onclick="load_config()">Lade</button> die Konfiguration</div>
+			<div class="config_serialization_error"></div>
 			<div class="config_serialization_content" contentEditable="true" onfocus="detach_key_events()" onblur="attach_key_events()"></div>
 		</div>
 	</body>
