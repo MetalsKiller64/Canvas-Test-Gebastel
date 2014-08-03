@@ -14,6 +14,10 @@
 			var grid_directions = {"up": grid_from_above, "down":grid_from_below, "left":grid_from_left, "right":grid_from_right};
 			var grids_ready = false;
 			var free_roaming_area = ["3,3","3,4","3,5","3,6", "4,3","4,4","4,5","4,6", "5,3","5,4","5,5","5,6", "6,3","6,4","6,5","6,6"];
+			var bg_move_up_line = "1";
+			var bg_move_down_line = "8";
+			var bg_move_left_col = "1";
+			var bg_move_right_col = "8";
 			
 			function init_grid()
 			{
@@ -221,6 +225,18 @@
 				}
 			}
 			
+			function show()
+			{
+				init_grid();
+				fill_grid_randomly();
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				var current_char_x = grid_from_above[current_field_from_above][0];
+				var current_char_y = grid_from_above[current_field_from_above][1];
+				var char_img = get_image("images/dummy_sprite_down_bandana.png");
+				c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
+			}
+			
 			function handle_key_event(evt)
 			{
 				switch(evt.keyCode)
@@ -252,7 +268,7 @@
 			
 	</script>
 	</head>
-	<body>
+	<body onload="javascript:show()">
 		<div style="position: relative;">
 			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
 			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
@@ -261,6 +277,5 @@
 		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 150; top: 500;">fill random</button>
 		<button onclick="javascript:move_background('up')" style="position: absolute; left: 240; top: 500;">move bg</button>
 		<button onclick="javascript:check_grids()" style="position: absolute; left:0 ; top: 530;">check grids</button>
-		<button onclick="javascript:test_blah()" style="position: absolute; left:100 ; top: 530;">test</button>
 	</body>
 </html>

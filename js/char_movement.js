@@ -31,6 +31,7 @@ function move_to_field(target_field, current_field, move_direction)
 
 function move_char()
 {
+	//debugger;
 	/*Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
 	FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben?*/
 	//console.log("move_char");
@@ -107,10 +108,6 @@ function move_char()
 		move_counter = 0;
 		running = false;
 		move_lock = false;
-		if ( no_move == false )
-		{
-			current_field_from_above = target_field_from_above;
-		}
 	}
 }
 
@@ -123,24 +120,24 @@ function get_image(file)
 
 function get_target_field(current_field, grid, move_direction)
 {
-	console.log("DEBUG");
+	//debugger;
 	var current_row = parseInt(current_field.split(",")[0]);
 	var current_col = parseInt(current_field.split(",")[1]);
 	var target_row = current_row;
 	var target_col = current_col;
-	if ( direction == "down" )
+	if ( move_direction == "down" )
 	{
 		target_row = current_row+1;
 	}
-	else if ( direction == "up" )
+	else if ( move_direction == "up" )
 	{
 		target_row = current_row-1;
 	}
-	else if ( direction == "left" )
+	else if ( move_direction == "left" )
 	{
 		target_col = current_col-1;
 	}
-	else if ( direction == "right" )
+	else if ( move_direction == "right" )
 	{
 		target_col = current_col+1;
 	}
@@ -149,6 +146,7 @@ function get_target_field(current_field, grid, move_direction)
 
 function start_moving(move_direction)
 {
+	//debugger;
 	no_move = false;
 	if ( current_x == -1 )
 	{
@@ -172,15 +170,49 @@ function start_moving(move_direction)
 	target_field_from_above = get_target_field(current_field_from_above, grid, move_direction);
 	//console.log(target_field_from_above);
 	//console.log(free_roaming_area);
-	if ($.inArray(target_field_from_above, free_roaming_area) == -1 && move_direction == "up")
+	//if ($.inArray(target_field_from_above, free_roaming_area) == -1 && move_direction == "up")
+	var bg_move_line = undefined;
+	var bg_move_col = undefined;
+	if ( move_direction == "up" )
 	{
-		no_move = true;
-		move_background("up");
+		bg_move_line = bg_move_up_line;
+	}
+	else if ( move_direction == "down" )
+	{
+		bg_move_line = bg_move_down_line;
+	}
+	else if ( move_direction == "left" )
+	{
+		bg_move_col = bg_move_left_col;
+	}
+	else if ( move_direction == "right" )
+	{
+		bg_move_col = bg_move_right_col;
+	}
+	if ( move_direction == "up" || move_direction == "down" )
+	{
+		if ( target_field_from_above.split(",")[0] == bg_move_line )
+		{
+			no_move = true;
+			move_background(move_direction);
+		}
+	}
+	else if ( move_direction == "left" || move_direction == "right" )
+	{
+		if ( target_field_from_above.split(",")[1] == bg_move_col )
+		{
+			no_move = true;
+			move_background(move_direction);
+		}
 	}
 	if ( running == false )
 	{
 		running = true;
 		direction = move_direction;
 		interval = setInterval(move_char, 60);
+	}
+	if ( no_move == false )
+	{
+		current_field_from_above = target_field_from_above;
 	}
 }
