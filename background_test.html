@@ -3,7 +3,11 @@
 	<script src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/char_movement.js"></script>
 	<script>
-			var background_tiles = {};
+			var background_tiles_from_above = {};
+			var background_tiles_from_below = {};
+			var background_tiles_from_left = {};
+			var background_tiles_from_right = {};
+			var background_tiles_directions = {"up": background_tiles_from_above, "down":background_tiles_from_below, "left":background_tiles_from_left, "right":background_tiles_from_right};
 			var max_background_x = 0;
 			var max_background_y = 0;
 			//var grid = {};
@@ -123,10 +127,11 @@
 				}
 			}
 			
-			function store_background_tile(key, is_solid, img, override)
+			function store_background_tile(grid_direction, key, is_solid, img, override)
 			{
+				var background_tiles = background_tiles_directions[grid_direction];
 				//Die Tiles werden in einem globalen Dictionary gespeichert, sodass für jedes Tile Koordinaten und andere Eigenschaften zugänglich sind
-				if ( background_tiles[key] == undefined ) 
+				if ( background_tiles[key] == undefined )
 				{
 					//console.log("debug: store_background_tile: "+x_id+" undefined")
 					background_tiles[key] = [is_solid, img];
@@ -153,7 +158,8 @@
 				var bg = document.getElementById("background_canvas");
 				var c = bg.getContext("2d");
 				var grid = grid_from_above;
-				for ( var key in grid )
+				var key = "";
+				for ( key in grid )
 				{
 					var current_field = grid[key];
 					var field_x = current_field[0];
@@ -167,8 +173,17 @@
 						random_tile = new Image();
 						random_tile.src = "images/grass_tile_marked.png";
 					}
-					store_background_tile(key, false, random_tile, true);
+					store_background_tile("up", key, false, random_tile, true);
 					c.drawImage(random_tile, field_x, field_y, 40, 40);
+				}
+
+				grid = grid_from_below;
+				for ( key in grid )
+				{
+					var current_field = grid[key];
+					var fieldx = current_field[0];
+					var fieldy = current_field[1];
+
 				}
 			}
 			
@@ -182,9 +197,12 @@
 				var end_key = end_row+","+end_col;
 				var row_tiles = {};
 				
+				//debugger;
 				var prev_field = undefined;
 				var prev_row = 0;
 				var saved_tiles = {};
+				//var background_tiles = background_tiles_directions[direction];
+				var background_tiles = background_tiles_directions["up"];
 				for ( var key in grid )
 				{
 					var key_row = parseInt(key.split(",")[0]);
@@ -210,7 +228,7 @@
 							new_tile = saved_tiles[key_row][key_col];
 						}
 						
-						store_background_tile(key, false, new_tile, true);
+						store_background_tile(direction, key, false, new_tile, true);
 					}
 				}
 				
@@ -236,9 +254,36 @@
 				var char_img = get_image("images/dummy_sprite_down_bandana.png");
 				c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
 			}
+
+			function check_char_position()
+			{
+				//manchmal ist verrutscht der Char in der Position zwischen die Tiles was dann doof aussieht;
+				//um das zu verhindern wird vor dem Bewegen die position mit der des aktuellen Tiles abgeglichen
+				if ( running == true )
+				{
+					console.log("char is moving...");
+					return;
+				}
+				var grid = grid_from_above;
+				var current_field_assumed = current_field_from_above;
+				var last_move_direction = direction;
+				var current_x_assumed = grid[current_field_assumed][0];
+				var current_y_assumed = grid[current_field_assumed][1];
+				if ( current_x != current_x_assumed || current_y != current_y_assumed )
+				{
+					var char_img = get_image("images/dummy_sprite_"+last_move_direction+"_bandana.png");
+					var canvas = document.getElementById("canvas");
+					var c = canvas.getContext("2d");
+					c.clearRect(current_x, current_y, char_width, char_height);
+					c.drawImage(char_img, current_x_assumed, current_y_assumed, char_width, char_height);
+					current_x = current_x_assumed;
+					current_y = current_y_assumed;
+				}
+			}
 			
 			function handle_key_event(evt)
 			{
+				check_char_position()
 				switch(evt.keyCode)
 				{
 					case 37:

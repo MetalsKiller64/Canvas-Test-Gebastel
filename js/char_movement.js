@@ -19,34 +19,9 @@ var current_field_from_right = "6,3";
 
 var field_directions = {"up":current_field_from_above, "down":current_field_from_below, "left":current_field_from_left, "right":current_field_from_right};
 
-function move_to_field(target_field, current_field, move_direction)
+function get_animation_image(char_file_name)
 {
-	var grid = grid_directions[move_direction];
-	var current_x = grid[current_field][0];
-	var current_y = grid[current_field][1];
-	var target_x = grid[target_field][0];
-	var target_y = grid[target_field][1];
-	move_to_position(target_x, target_y, current_field);
-}
-
-function move_char()
-{
-	//debugger;
-	/*Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
-	FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben?*/
-	//console.log("move_char");
-	//var grid = grid_from_above;
-	//var current_x = grid[current_field_from_above][0];
-	//var current_y = grid[current_field_from_above][1];
-	//var target_x = grid[target_field_from_above][0];
-	//var target_y = grid[target_field_from_above][1];
-	var standing = new Image();
-	var char_file_name = "images/dummy_sprite_"+direction+"_bandana"
-	standing.src = char_file_name+".png";
-	canvas = document.getElementById("canvas");
-	c = canvas.getContext("2d");
 	var image = null;
-	
 	//FIXME: Das kann man bestimmt noch einfacher oder eleganter lösen...
 	if ( animation_parts == 5 )
 	{
@@ -74,6 +49,25 @@ function move_char()
 			image = get_image(char_file_name+"2.png");
 		}
 	}
+	return image;
+}
+
+function move_char()
+{
+	//debugger;
+	/*Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
+	FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben?*/
+	//console.log("move_char");
+	//var grid = grid_from_above;
+	//var current_x = grid[current_field_from_above][0];
+	//var current_y = grid[current_field_from_above][1];
+	//var target_x = grid[target_field_from_above][0];
+	//var target_y = grid[target_field_from_above][1];
+	var standing = new Image();
+	var char_file_name = "images/dummy_sprite_"+direction+"_bandana"
+	standing.src = char_file_name+".png";
+	canvas = document.getElementById("canvas");
+	c = canvas.getContext("2d");
 	
 	var old_x = current_x;
 	var old_y = current_y;
@@ -96,8 +90,20 @@ function move_char()
 			current_x = current_x + 5;
 		}
 	}
+	var image = get_animation_image(char_file_name);
 	c.clearRect(old_x, old_y, char_width, char_height);
-	c.drawImage(image, current_x ,current_y, char_width, char_height);
+	for ( var tries = 0; tries < 3; tries++ )
+	{
+		try
+		{
+			c.drawImage(image, current_x ,current_y, char_width, char_height);
+			break;
+		}
+		catch (exception)
+		{
+			image = get_animation_image(char_file_name);
+		}
+	}
 	move_counter = move_counter + 1;
 	//console.log("debug: "+move_counter);
 	if ( move_counter >= animation_parts )
@@ -147,6 +153,11 @@ function get_target_field(current_field, grid, move_direction)
 function start_moving(move_direction)
 {
 	//debugger;
+	if ( running == true )
+	{
+		console.log("blah!!");
+		return;
+	}
 	no_move = false;
 	if ( current_x == -1 )
 	{
@@ -210,6 +221,10 @@ function start_moving(move_direction)
 		running = true;
 		direction = move_direction;
 		interval = setInterval(move_char, 60);
+	}
+	else
+	{
+		return;
 	}
 	if ( no_move == false )
 	{
