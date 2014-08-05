@@ -80,7 +80,7 @@ function init_grid()
 			var left_mapped_key = (max_col-col)+","+row;
 			var right_mapped_key = col+","+(max_row-row);
 			//console.log("key:"+key+"; mapped_left:"+left_mapped_key);
-			console.log("key:"+key+"; mapped_right:"+right_mapped_key);
+			//console.log("key:"+key+"; mapped_right:"+right_mapped_key);
 			key_map_down_to_up[key] = up_mapped_key;
 			key_map_down_to_left[key] = left_mapped_key;
 			key_map_down_to_right[key] = right_mapped_key;

@@ -1,0 +1,255 @@
+<html>
+	<head>
+	<script src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/char_movement.js"></script>
+	<script type="text/javascript" src="js/background_movement.js"></script>
+	<script>
+			var active_mob_positions = [];
+			var last_id = 0;
+			var mob_move_directions = ["up", "down", "left", "right"];
+			var mobs_running = [];
+			var active_mobs = {};
+			var currently_moving_mob = 0;
+			var mob_is_moving = false;
+			
+			function move_that_mob(mob_id, mob_field, target_field, mob_img_parts, move_direction, animation_phases)
+			{
+				//debugger;
+				/*if ( mob_is_moving == true )
+				{
+					setTimeout(move_that_mob, 500, mob_field, move_direction);
+				}*/
+				//var mob_pos_key = active_mobs[currently_moving_mob];
+				mob_face_direction = active_mobs[mob_id][2];
+				var mob_move_counter = active_mobs[mob_id][1];
+				var mob_img_file = mob_img_parts[0]+"_"+move_direction+"_"+mob_img_parts[1];
+				/*if ( mob_face_direction != move_direction )
+				{
+					var turned_mob = new Image();
+					turned_mob.onload = function() {
+						canvas = document.getElementById("canvas");
+						c = canvas.getContext("2d");
+						c.clearRect(current_mob_x, current_mob_y, char_width, char_height);
+						c.drawImage(turned_mob, current_mob_x, current_mob_y, char_width, char_height);
+						
+					};
+					turned_mob.src = mob_img_file;
+					active_mobs[mob_id][2] = move_direction;
+					clearInterval(interval);
+					active_mobs[mob_id][1] = 0;
+					running = false;
+					move_lock = false;
+					return;
+					//var turned_mob = get_image(mob_img_file);
+					
+				}*/
+				var standing = new Image();
+				standing.src = mob_img_parts[0]+"_"+move_direction+"_"+mob_img_parts[1]+".png";
+				canvas = document.getElementById("canvas");
+				c = canvas.getContext("2d");
+				
+				var current_mob_x = active_mobs[mob_id][3];
+				var current_mob_y = active_mobs[mob_id][4];
+				var old_x = current_mob_x;
+				var old_y = current_mob_y;
+				if ( move_direction == "down" )
+				{
+					current_mob_y = current_mob_y + 8;
+				}
+				else if ( move_direction == "up" )
+				{
+					current_mob_y = current_mob_y - 8;
+				}
+				else if ( move_direction == "left" )
+				{
+					current_mob_x = current_mob_x - 5;
+				}
+				else if ( move_direction == "right" )
+				{
+					current_mob_x = current_mob_x + 5;
+				}
+				active_mobs[mob_id][3] = current_mob_x;
+				active_mobs[mob_id][4] = current_mob_y;
+				var image = get_animation_image(mob_img_file, animation_phases, mob_move_counter);
+				c.clearRect(old_x, old_y, char_width, char_height);
+				for ( var tries = 0; tries < 3; tries++ )
+				{
+					try
+					{
+						c.drawImage(image, current_mob_x ,current_mob_y, char_width, char_height);
+						break;
+					}
+					catch (exception)
+					{
+						image = get_animation_image(mob_img_file);
+					}
+				}
+				mob_move_counter = mob_move_counter + 1;
+				//console.log("debug: "+move_counter);
+				if ( mob_move_counter >= animation_parts )
+				{
+					c.clearRect(old_x, old_y, char_width, char_height);
+					c.drawImage(standing, current_mob_x ,current_mob_y, char_width, char_height);
+					clearInterval(interval);
+					active_mobs[mob_id][1] = 0;
+					running = false;
+					move_lock = false;
+				}
+				active_mobs[mob_id][1] = mob_move_counter;
+			}
+			
+			function move_mob(id, img_parts, position_key)
+			{
+				//debugger;
+				var move_indicator = Math.floor((Math.random() * 2) + 1);
+				if ( move_indicator == 2 )
+				{
+					var mob_log = document.getElementById("mob_log");
+					var mob_log_content = mob_log.innerHTML;
+					
+					var direction_index = Math.floor((Math.random() * 3) + 0);
+					var direction_to_move = mob_move_directions[direction_index];
+					var animation_phases = 5;
+					if ( direction_to_move == "left" || direction_to_move == "right" )
+					{
+						animation_phases = 8;
+					}
+					var current_mob_x = grid_from_above[position_key][0];
+					var current_mob_y = grid_from_above[position_key][1];
+					var mob_img_file = img_parts[0]+"_"+direction_to_move+"_"+img_parts[1]+".png";
+					var new_position_key = get_target_field(position_key, direction_to_move);
+					//var mob_face_direction = active_mobs[id][2];
+					
+					var current_datetime = new Date();
+					/*if ( addition != undefined )
+					{
+						//console.log("mob("+id+"): moving around..."+addition);
+						mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving around..."
+					}*/
+						//console.log("mob("+id+"): moving around...");
+					mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving "+direction_to_move+"..."
+					interval = setInterval( function() { move_that_mob(id, position_key, new_position_key, img_parts, direction_to_move, animation_phases); }, 60);
+				}
+				mobs_running.push(setTimeout(move_mob, 5000, id, img_parts, position_key));
+			}
+			
+			function init_mob()
+			{
+				if ( active_mob_positions.length >= 5 )
+				{
+					console.log("Es sind bereits 5 Mobs aktiv, mach die erstmal weg!");
+					return;
+				}
+				var current_player_field = current_field_from_above;
+				var p_row = parseInt(current_player_field.split(",")[0]);
+				var p_col = parseInt(current_player_field.split(",")[1]);
+				var min_row = p_row-1;
+				var min_col = p_col-1;
+				var max_row = p_row+1;
+				var max_col = p_col+1;
+				//var player_safe_zone = [(p_row-1)+","+(p_col-1), (p_row-1)+","+p_col, (p_row-1)+","+(p_col+1),  p_row+","+(p_col-1), p_row+","+p_col, p_row+","+(p_col+1), (p_row+1)+","+(p_col-1), (p_row+1)+","+p_col, (p_row+1)+","+(p_col+1)];
+				var player_safe_zone = [];
+				for ( var current_row = min_row; current_row <= max_row; current_row++ )
+				{
+					for ( var current_col = min_col; current_col <= max_col; current_col++ )
+					{
+						player_safe_zone.push(current_row+","+current_col);
+					}
+				}
+				var mob_spawn_key = undefined;
+				while ( true )
+				{
+					var new_key = generate_random_position_key()
+					console.log(new_key);
+					if ( $.inArray(new_key, player_safe_zone) != -1 )
+					{
+						continue;
+					}
+					if ( $.inArray(new_key, active_mob_positions) != -1 )
+					{
+						continue;
+					}
+					mob_spawn_key = new_key;
+					break;
+				}
+				spawn_mob(mob_spawn_key);
+			}
+			
+			function spawn_mob(position_key)
+			{
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				var mob_img_parts = ["images/dummy_sprite", "bandana"]
+				var mob_img = get_image(mob_img_parts[0]+"_down_"+mob_img_parts[1]);
+				var mob_x = grid_from_above[position_key][0];
+				var mob_y = grid_from_above[position_key][1];
+				active_mob_positions.push(position_key);
+				active_mobs[last_id] = [position_key, 0, "down", mob_x, mob_y];
+				c.drawImage(mob_img, mob_x, mob_y, char_width, char_height);
+				mobs_running.push(setTimeout(move_mob, 5000, last_id, mob_img_parts, position_key));
+				last_id = last_id+1;
+			}
+			
+			function stop_all_running_mobs()
+			{
+				for ( var index = 0; index < mobs_running.length; index++ )
+				{
+					clearTimeout(mobs_running[index]);
+				}
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				for ( var posindex = 0; posindex < active_mob_positions.length; posindex++ )
+				{
+					var key = active_mob_positions[posindex];
+					var mob_x = grid_from_above[key][0];
+					var mob_y = grid_from_above[key][1];
+					c.clearRect(mob_x, mob_y, char_width, char_height);
+				}
+				last_id = 0;
+			}
+			
+			function generate_random_position_key()
+			{
+				var random_row = Math.floor((Math.random() * 9) + 1);
+				var random_col = Math.floor((Math.random() * 9) + 1);
+				var random_key = random_row+","+random_col;
+				return random_key;
+			}
+			
+			function handle_key_event(evt)
+			{
+				check_char_position()
+				switch(evt.keyCode)
+				{
+					case 37:
+						animation_parts = 8;
+						start_moving("left");
+						break;
+					case 39:
+						animation_parts = 8;
+						start_moving("right");
+						break;
+					case 40:
+						animation_parts = 5;
+						start_moving("down");
+						break;
+					case 38:
+						animation_parts = 5;
+						start_moving("up");
+						break;
+				}
+			}
+			window.addEventListener('keydown', handle_key_event, true);
+	</script>
+	</head>
+	<body onload="javascript:show()">
+		<div style="position: relative;">
+			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+		</div>
+		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
+		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
+		<div id="mob_log" style="position:absolute; left: 500; top: 0; width:500px; height:700px; overflow:auto;">Mob-Lob:
+		</div>
+	</body>
+</html>

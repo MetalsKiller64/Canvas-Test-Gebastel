@@ -19,32 +19,32 @@ var current_field_from_right = "6,3";
 
 var field_directions = {"up":current_field_from_above, "down":current_field_from_below, "left":current_field_from_left, "right":current_field_from_right};
 
-function get_animation_image(char_file_name)
+function get_animation_image(char_file_name, animation_phases, current_move_counter)
 {
 	var image = null;
 	//FIXME: Das kann man bestimmt noch einfacher oder eleganter lösen...
-	if ( animation_parts == 5 )
+	if ( animation_phases == 5 )
 	{
-		if ( move_counter >= 0 && move_counter <= 2 )
+		if ( current_move_counter >= 0 && current_move_counter <= 2 )
 		{
 			image = get_image(char_file_name+"1.png");
 		}
-		else if ( move_counter >= 3 && move_counter <= 5 )
+		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
 		{
 			image = get_image(char_file_name+"2.png");
 		}
 	}
 	else
 	{
-		if ( move_counter >= 0 && move_counter <= 2 )
+		if ( current_move_counter >= 0 && current_move_counter <= 2 )
 		{
 			image = get_image(char_file_name+"1.png");
 		}
-		else if ( move_counter >= 3 && move_counter <= 5 )
+		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
 		{
 			image = get_image(char_file_name+".png");
 		}
-		else if ( move_counter >= 6 && move_counter <= 8 )
+		else if ( current_move_counter >= 6 && current_move_counter <= 8 )
 		{
 			image = get_image(char_file_name+"2.png");
 		}
@@ -52,19 +52,11 @@ function get_animation_image(char_file_name)
 	return image;
 }
 
-function move_char()
+function move_char(char_file_name)
 {
 	//debugger;
-	/*Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
-	FIXME: Kann man beim Aufruf von setInterval() irgendwie Parameter an die aufgerufene Funktion übergeben?*/
-	//console.log("move_char");
-	//var grid = grid_from_above;
-	//var current_x = grid[current_field_from_above][0];
-	//var current_y = grid[current_field_from_above][1];
-	//var target_x = grid[target_field_from_above][0];
-	//var target_y = grid[target_field_from_above][1];
+	//Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
 	var standing = new Image();
-	var char_file_name = "images/dummy_sprite_"+direction+"_bandana"
 	standing.src = char_file_name+".png";
 	canvas = document.getElementById("canvas");
 	c = canvas.getContext("2d");
@@ -90,8 +82,9 @@ function move_char()
 			current_x = current_x + 5;
 		}
 	}
-	var image = get_animation_image(char_file_name);
+	var image = get_animation_image(char_file_name, animation_parts, move_counter);
 	c.clearRect(old_x, old_y, char_width, char_height);
+	//FIXME: hier image.onload() verwenden anstatt der schleife
 	for ( var tries = 0; tries < 3; tries++ )
 	{
 		try
@@ -101,7 +94,7 @@ function move_char()
 		}
 		catch (exception)
 		{
-			image = get_animation_image(char_file_name);
+			image = get_animation_image(char_file_name, animation_parts, move_counter);
 		}
 	}
 	move_counter = move_counter + 1;
@@ -124,7 +117,7 @@ function get_image(file)
 	return img;
 }
 
-function get_target_field(current_field, grid, move_direction)
+function get_target_field(current_field, move_direction)
 {
 	//debugger;
 	var current_row = parseInt(current_field.split(",")[0]);
@@ -178,7 +171,7 @@ function start_moving(move_direction)
 		return;
 	}
 	var grid = grid_from_above;
-	target_field_from_above = get_target_field(current_field_from_above, grid, move_direction);
+	target_field_from_above = get_target_field(current_field_from_above, move_direction);
 	//console.log(target_field_from_above);
 	//console.log(free_roaming_area);
 	//if ($.inArray(target_field_from_above, free_roaming_area) == -1 && move_direction == "up")
@@ -220,7 +213,7 @@ function start_moving(move_direction)
 	{
 		running = true;
 		direction = move_direction;
-		interval = setInterval(move_char, 60);
+		interval = setInterval( function() { move_char("images/dummy_sprite_"+move_direction+"_bandana"); }, 60);
 	}
 	else
 	{
