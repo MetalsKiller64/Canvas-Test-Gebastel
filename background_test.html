@@ -1,0 +1,50 @@
+<html>
+	<head>
+	<script src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/char_movement.js"></script>
+	<script type="text/javascript" src="js/background_movement.js"></script>
+	<script>
+			function handle_key_event(evt)
+			{
+				check_char_position()
+				switch(evt.keyCode)
+				{
+					case 37:
+						animation_parts = 8;
+						start_moving("left");
+						//move_background("left");
+						break;
+					case 39:
+						animation_parts = 8;
+						start_moving("right");
+						//move_background("right");
+						break;
+					case 40:
+						animation_parts = 5;
+						start_moving("down");
+						//move_background("down");
+						break;
+					case 38:
+						animation_parts = 5;
+						start_moving("up");
+						//move_background("up");
+						break;
+				}
+			}
+			window.addEventListener('keydown', handle_key_event, true);
+
+			
+	</script>
+	</head>
+	<body onload="javascript:show()">
+		<div style="position: relative;">
+			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+		</div>
+		<button onclick="javascript:init_grid()" style="position: absolute; left: 0; top: 500;">init grid</button>
+		<button onclick="javascript:fill_grid_randomly()" style="position: absolute; left: 150; top: 500;">fill random</button>
+		<button onclick="javascript:move_background('up')" style="position: absolute; left: 240; top: 500;">move bg</button>
+		<button onclick="javascript:check_grids()" style="position: absolute; left:0 ; top: 530;">check grids</button>
+		<button onclick="javascript:check_key_maps()" style="position: absolute; left:150 ; top: 530;">check key-maps</button>
+	</body>
+</html>
