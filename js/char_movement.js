@@ -19,45 +19,65 @@ var current_field_from_right = "6,3";
 
 var field_directions = {"up":current_field_from_above, "down":current_field_from_below, "left":current_field_from_left, "right":current_field_from_right};
 
-function get_animation_image(char_file_name, animation_phases, current_move_counter)
+function get_animation_image(char_file_obj, move_direction, animation_phases, current_move_counter)
 {
 	var image = null;
+	var char_file_name = "";
+
 	//FIXME: Das kann man bestimmt noch einfacher oder eleganter lösen...
+	var char_file_number = 1;
 	if ( animation_phases == 5 )
 	{
 		if ( current_move_counter >= 0 && current_move_counter <= 2 )
 		{
-			image = get_image(char_file_name+"1.png");
+			//image = get_image(char_file_name+"1.png");
+			char_file_number = 1;
 		}
 		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
 		{
-			image = get_image(char_file_name+"2.png");
+			//image = get_image(char_file_name+"2.png");
+			char_file_number = 2;
 		}
 	}
 	else
 	{
 		if ( current_move_counter >= 0 && current_move_counter <= 2 )
 		{
-			image = get_image(char_file_name+"1.png");
+			//image = get_image(char_file_name+"1.png");
+			char_file_number = 1;
 		}
 		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
 		{
-			image = get_image(char_file_name+".png");
+			//image = get_image(char_file_name+".png");
+			char_file_number = 0;
 		}
 		else if ( current_move_counter >= 6 && current_move_counter <= 8 )
 		{
-			image = get_image(char_file_name+"2.png");
+			//image = get_image(char_file_name+"2.png");
+			char_file_number = 2;
 		}
 	}
+	if ( char_file_obj.indexOf("|") != -1 )
+	{
+		var char_file_name_parts = char_file_obj.split("|");
+		char_file_name = char_file_name_parts[0]+move_direction+char_file_number+char_file_name_parts[1];
+	}
+	image = get_image(char_file_name)
 	return image;
 }
 
-function move_char(char_file_name)
+function move_char(char_file_name, move_direction)
 {
 	//debugger;
 	//Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
-	var standing = new Image();
-	standing.src = char_file_name+".png";
+	var standing_char = new Image();
+	var standing_char_file = char_file_name;
+	if ( char_file_name.indexOf("|") != -1 )
+	{
+		var char_file_parts = char_file_name.split("|");
+		standing_char_file = char_file_parts[0]+move_direction+"0"+char_file_parts[1]+".png";
+	}
+	standing_char.src = standing_char_file;
 	canvas = document.getElementById("canvas");
 	c = canvas.getContext("2d");
 	
@@ -82,7 +102,7 @@ function move_char(char_file_name)
 			current_x = current_x + 5;
 		}
 	}
-	var image = get_animation_image(char_file_name, animation_parts, move_counter);
+	var image = get_animation_image(char_file_name, move_direction, animation_parts, move_counter);
 	c.clearRect(old_x, old_y, char_width, char_height);
 	//FIXME: hier image.onload() verwenden anstatt der schleife
 	for ( var tries = 0; tries < 3; tries++ )
@@ -94,7 +114,7 @@ function move_char(char_file_name)
 		}
 		catch (exception)
 		{
-			image = get_animation_image(char_file_name, animation_parts, move_counter);
+			image = get_animation_image(char_file_name, move_direction, animation_parts, move_counter);
 		}
 	}
 	move_counter = move_counter + 1;
@@ -102,7 +122,7 @@ function move_char(char_file_name)
 	if ( move_counter >= animation_parts )
 	{
 		c.clearRect(old_x, old_y, char_width, char_height);
-		c.drawImage(standing, current_x ,current_y, char_width, char_height);
+		c.drawImage(standing_char, current_x ,current_y, char_width, char_height);
 		clearInterval(interval);
 		move_counter = 0;
 		running = false;
@@ -162,7 +182,7 @@ function start_moving(move_direction)
 	}
 	if ( face_direction != move_direction )
 	{
-		var turned_char = get_image("images/dummy_sprite_"+move_direction+"_bandana.png");
+		var turned_char = get_image("images/dummy_sprite_"+move_direction+"0_bandana.png");
 		canvas = document.getElementById("canvas");
 		c = canvas.getContext("2d");
 		c.clearRect(current_x, current_y, char_width, char_height);
@@ -213,7 +233,7 @@ function start_moving(move_direction)
 	{
 		running = true;
 		direction = move_direction;
-		interval = setInterval( function() { move_char("images/dummy_sprite_"+move_direction+"_bandana"); }, 60);
+		interval = setInterval( function() { move_char("images/dummy_sprite_|_bandana", move_direction); }, 60);
 	}
 	else
 	{

@@ -360,7 +360,7 @@ function show()
 	var c = canvas.getContext("2d");
 	var current_char_x = grid_from_above[current_field_from_above][0];
 	var current_char_y = grid_from_above[current_field_from_above][1];
-	var char_img = get_image("images/dummy_sprite_down_bandana.png");
+	var char_img = get_image("images/dummy_sprite_down0_bandana.png");
 	c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
 }
 
@@ -380,7 +380,7 @@ function check_char_position()
 	var current_y_assumed = grid[current_field_assumed][1];
 	if ( current_x != current_x_assumed || current_y != current_y_assumed )
 	{
-		var char_img = get_image("images/dummy_sprite_"+last_move_direction+"_bandana.png");
+		var char_img = get_image("images/dummy_sprite_"+last_move_direction+"0_bandana.png");
 		var canvas = document.getElementById("canvas");
 		var c = canvas.getContext("2d");
 		c.clearRect(current_x, current_y, char_width, char_height);

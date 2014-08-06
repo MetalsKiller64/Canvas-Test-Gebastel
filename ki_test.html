@@ -11,6 +11,8 @@
 			var active_mobs = {};
 			var currently_moving_mob = 0;
 			var mob_is_moving = false;
+			var drawings = ["up0","up1","up2","down0","down1","down2","left0","left1","left2","right0","right1","right2"];
+			var mob_images = {};
 			
 			function move_that_mob(mob_id, mob_field, target_field, mob_img_parts, move_direction, animation_phases)
 			{
@@ -70,7 +72,7 @@
 				}
 				active_mobs[mob_id][3] = current_mob_x;
 				active_mobs[mob_id][4] = current_mob_y;
-				var image = get_animation_image(mob_img_file, animation_phases, mob_move_counter);
+				var image = get_animation_image(mob_img_file, move_direction, animation_phases, mob_move_counter);
 				c.clearRect(old_x, old_y, char_width, char_height);
 				for ( var tries = 0; tries < 3; tries++ )
 				{
@@ -81,7 +83,7 @@
 					}
 					catch (exception)
 					{
-						image = get_animation_image(mob_img_file);
+						image = get_animation_image(mob_img_file, move_direction, animation_phases, mob_move_counter);
 					}
 				}
 				mob_move_counter = mob_move_counter + 1;
@@ -90,10 +92,8 @@
 				{
 					c.clearRect(old_x, old_y, char_width, char_height);
 					c.drawImage(standing, current_mob_x ,current_mob_y, char_width, char_height);
-					clearInterval(interval);
+					clearInterval(mob_interval);
 					active_mobs[mob_id][1] = 0;
-					running = false;
-					move_lock = false;
 				}
 				active_mobs[mob_id][1] = mob_move_counter;
 			}
@@ -128,7 +128,7 @@
 					}*/
 						//console.log("mob("+id+"): moving around...");
 					mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving "+direction_to_move+"..."
-					interval = setInterval( function() { move_that_mob(id, position_key, new_position_key, img_parts, direction_to_move, animation_phases); }, 60);
+					mob_interval = setInterval( function() { move_that_mob(id, position_key, new_position_key, img_parts, direction_to_move, animation_phases); }, 60);
 				}
 				mobs_running.push(setTimeout(move_mob, 5000, id, img_parts, position_key));
 			}
@@ -185,9 +185,42 @@
 				var mob_y = grid_from_above[position_key][1];
 				active_mob_positions.push(position_key);
 				active_mobs[last_id] = [position_key, 0, "down", mob_x, mob_y];
+				var mob_drawing_object = document.createElement("div");
+				//mob_drawing_object.id = "mob_"+last_id;
+				mob_drawing_object.style = "position:absolute; top:30; left:30;";
+				mob_images[last_id] = {"div":mob_drawing_object};
+				for ( var ccount = 0; ccount < 12; ccount++ )
+				{
+					var mob_canvas = document.createElement("canvas");
+					mob_images[last_id]["mob_move_"+drawings[ccount]] = mob_canvas;
+					//mob_canvas.id = "mob_move_"+drawings[ccount];
+					//mob_canvas.style = "position:absolute;";
+					mob_canvas.width = 40;
+					mob_canvas.height = 40;
+					//mob_canvas.style.display = "none";
+					
+					//mob_canvas.style.display = "none";
+					mob_drawing_object.appendChild(mob_canvas);
+				}
+				document.body.appendChild(mob_drawing_object);
 				c.drawImage(mob_img, mob_x, mob_y, char_width, char_height);
 				mobs_running.push(setTimeout(move_mob, 5000, last_id, mob_img_parts, position_key));
+				draw_mob_images(last_id);
 				last_id = last_id+1;
+			}
+			
+			function draw_mob_images(id)
+			{
+				for ( var count = 0; count < 12; count++ )
+				{
+					var mob_canvas = mob_images[id]["mob_move_"+drawings[count]]; //das wird so nichts, da am ende alle images in das selbe canvas gemalt werden...
+					var c_img = new Image();
+					c_img.onload = function() {
+						var cc = mob_canvas.getContext("2d");
+						cc.drawImage(this,0,0,40,40);
+					};
+					c_img.src = "images/dummy_sprite_"+drawings[count]+"_bandana.png";
+				}
 			}
 			
 			function stop_all_running_mobs()
@@ -204,6 +237,11 @@
 					var mob_x = grid_from_above[key][0];
 					var mob_y = grid_from_above[key][1];
 					c.clearRect(mob_x, mob_y, char_width, char_height);
+				}
+				for ( var id = 0; id < last_id; id++ )
+				{
+					var element = document.getElementById("mob_"+id);
+					element.remove();
 				}
 				active_mobs = {};
 				active_mob_positions = [];
@@ -224,18 +262,22 @@
 				switch(evt.keyCode)
 				{
 					case 37:
+						evt.preventDefault();
 						animation_parts = 8;
 						start_moving("left");
 						break;
 					case 39:
+						evt.preventDefault();
 						animation_parts = 8;
 						start_moving("right");
 						break;
 					case 40:
+						evt.preventDefault();
 						animation_parts = 5;
 						start_moving("down");
 						break;
 					case 38:
+						evt.preventDefault();
 						animation_parts = 5;
 						start_moving("up");
 						break;
