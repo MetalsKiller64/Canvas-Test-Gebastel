@@ -13,6 +13,9 @@
 			var mob_is_moving = false;
 			var drawings = ["up0","up1","up2","down0","down1","down2","left0","left1","left2","right0","right1","right2"];
 			var mob_images = {};
+			var x_offset = 10;
+			var y_offset = 10;
+			var mob_move_intervals = {};
 			
 			function move_that_mob(mob_id, mob_field, target_field, mob_img_parts, move_direction, animation_phases)
 			{
@@ -96,6 +99,85 @@
 					active_mobs[mob_id][1] = 0;
 				}
 				active_mobs[mob_id][1] = mob_move_counter;
+			}
+
+			function move_mob_new(id, current_field, target_field, move_direction)
+			{
+				//debugger;
+				var mob = mob_images[id]["div"];
+				var standing_mob = mob_images[id][move_direction+"0"];
+				var mob_face_direction = active_mobs[id][2];
+				if ( mob_face_direction != move_direction )
+				{
+					active_mobs[id][2] = move_direction;
+					change_mob_objects_view(id, standing_mob);
+					return;
+				}
+				var target_x = grid_from_above[target_field][0];
+				var target_y = grid_from_above[target_field][1];
+				mob_move_intervals[id] = setInterval( function() {move_mob_div(id, move_direction, target_field, 5, target_x, target_y)}, 60 )
+			}
+
+			function move_mob_div(id, move_direction, target_field, pixels, target_x, target_y)
+			{
+				//debugger;
+				var mob_div = mob_images[id]["div"];
+				target_x += 10;
+				target_y += 10;
+				var current_x = parseInt(mob_div.style.left.replace("/px$/", ""));
+				var current_y = parseInt(mob_div.style.top.replace("/px$/", ""));
+				//current_x = current_x-x_offset;
+				//current_y = current_y-y_offset; 
+				console.log(current_x);
+				var movement_counter = active_mobs[id][1];
+				if ( move_direction == "left" )
+				{
+					current_x -= pixels;
+				}
+				else if ( move_direction == "right" )
+				{
+					current_x += pixels;
+				}
+				else if ( move_direction == "up" )
+				{
+					current_y -= pixels;
+				}
+				else if ( move_direction == "down" )
+				{
+					current_y += pixels;
+				}
+				mob_div.style.left = current_x;
+				mob_div.style.top = current_y;
+				if ( current_x == target_x && current_y == target_y )
+				{
+					move_interval = mob_move_intervals[id];
+					//active_mobs[id][1] = 0;
+					clearInterval(move_interval);
+					active_mobs[id][0] = target_field;
+					return;
+				}
+				active_mobs[id][1] = movement_counter+1;
+			}
+
+			function change_mob_objects_view(id, new_object)
+			{
+				var mob_objects = mob_images[id];
+				for ( var key in mob_objects )
+				{
+					if ( key == "div" )
+					{
+						continue;
+					}
+					var current_obj = mob_objects[key];
+					if ( current_obj == new_object )
+					{
+						current_obj.style.display = "";
+					}
+					else
+					{
+						current_obj.style.display = "none";
+					}
+				}
 			}
 			
 			function move_mob(id, img_parts, position_key)
@@ -187,24 +269,29 @@
 				active_mobs[last_id] = [position_key, 0, "down", mob_x, mob_y];
 				var mob_drawing_object = document.createElement("div");
 				//mob_drawing_object.id = "mob_"+last_id;
-				mob_drawing_object.style = "position:absolute; top:30; left:30;";
+				mob_drawing_object.style.position = "absolute";
+				mob_drawing_object.style.top = (mob_y+y_offset);
+				mob_drawing_object.style.left = (mob_x+x_offset);
 				mob_images[last_id] = {"div":mob_drawing_object};
 				for ( var ccount = 0; ccount < 12; ccount++ )
 				{
 					var mob_canvas = document.createElement("canvas");
-					mob_images[last_id]["mob_move_"+drawings[ccount]] = mob_canvas;
+					mob_images[last_id][drawings[ccount]] = mob_canvas;
 					//mob_canvas.id = "mob_move_"+drawings[ccount];
 					//mob_canvas.style = "position:absolute;";
 					mob_canvas.width = 40;
 					mob_canvas.height = 40;
-					//mob_canvas.style.display = "none";
+					if ( drawings[ccount] != "down0" )
+					{
+						mob_canvas.style.display = "none";
+					}
 					
 					//mob_canvas.style.display = "none";
 					mob_drawing_object.appendChild(mob_canvas);
 				}
 				document.body.appendChild(mob_drawing_object);
 				c.drawImage(mob_img, mob_x, mob_y, char_width, char_height);
-				mobs_running.push(setTimeout(move_mob, 5000, last_id, mob_img_parts, position_key));
+				//mobs_running.push(setTimeout(move_mob, 5000, last_id, mob_img_parts, position_key));
 				draw_mob_images(last_id);
 				last_id = last_id+1;
 			}
@@ -213,14 +300,49 @@
 			{
 				for ( var count = 0; count < 12; count++ )
 				{
-					var mob_canvas = mob_images[id]["mob_move_"+drawings[count]]; //das wird so nichts, da am ende alle images in das selbe canvas gemalt werden...
+					var mob_canvas = mob_images[id][drawings[count]];
 					var c_img = new Image();
+					c_img.canvas = mob_canvas;
 					c_img.onload = function() {
+						var mob_canvas = this.canvas;
 						var cc = mob_canvas.getContext("2d");
 						cc.drawImage(this,0,0,40,40);
 					};
 					c_img.src = "images/dummy_sprite_"+drawings[count]+"_bandana.png";
 				}
+			}
+
+			function move_mob_test()
+			{
+				var direction_index = Math.floor((Math.random() * 4) + 1);
+				direction_index = direction_index-1;
+				console.log(direction_index)
+				var direction_to_move = mob_move_directions[direction_index];
+				console.log(direction_to_move)
+				var animation_phases = 5;
+				/*if ( direction_to_move == "left" || direction_to_move == "right" )
+				{
+					animation_phases = 8;
+				}
+				var current_mob_x = grid_from_above[position_key][0];
+				var current_mob_y = grid_from_above[position_key][1];
+				var mob_img_file = img_parts[0]+"_"+direction_to_move+"_"+img_parts[1]+".png";
+				var new_position_key = get_target_field(position_key, direction_to_move);
+				//var mob_face_direction = active_mobs[id][2];
+				
+				var current_datetime = new Date();
+				/*if ( addition != undefined )
+				{
+					//console.log("mob("+id+"): moving around..."+addition);
+					mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving around..."
+				}* /
+					//console.log("mob("+id+"): moving around...");
+				mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving "+direction_to_move+"..."
+				mob_interval = setInterval( function() { move_that_mob(id, position_key, new_position_key, img_parts, direction_to_move, animation_phases); }, 60);
+				*/
+				var current_field = active_mobs[0][0];
+				var new_position_key = get_target_field(current_field, direction_to_move);
+				move_mob_new(0, current_field, new_position_key, direction_to_move);
 			}
 			
 			function stop_all_running_mobs()
@@ -256,6 +378,18 @@
 				return random_key;
 			}
 			
+			function show()
+			{
+				init_grid();
+				fill_grid_randomly();
+				var canvas = document.getElementById("canvas");
+				var c = canvas.getContext("2d");
+				var current_char_x = grid_from_above[current_field_from_above][0];
+				var current_char_y = grid_from_above[current_field_from_above][1];
+				var char_img = get_image("images/dummy_sprite_down0_bandana.png");
+				c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
+			}
+
 			function handle_key_event(evt)
 			{
 				check_char_position()
@@ -286,12 +420,14 @@
 			window.addEventListener('keydown', handle_key_event, true);
 	</script>
 	</head>
-	<body onload="javascript:show()">
-		<div style="position: relative;">
-			<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
-			<canvas id="canvas" width="480" height="400" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
-		</div>
+	<body>
+		<!-- <div style="position: relative;">
+			
+		</div> --> 
+		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10; z-index: 0;"></canvas>
+		<canvas id="canvas" width="480" height="400" style="position: absolute; left: 10; top: 10; z-index: 1;"></canvas>
 		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
+		<button onclick="javascript:move_mob_test()" style="position: absolute; left: 150; top: 500;">move</button>
 		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
 		<div id="mob_log" style="position:absolute; left: 500; top: 0; width:500px; height:700px; overflow:auto;">Mob-Lob:
 		</div>
