@@ -1,0 +1,57 @@
+<html>
+	<head>
+	<script src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/char_movement.js"></script>
+	<script type="text/javascript" src="js/background_movement.js"></script>
+	<script>
+			var drawings = ["up0","up1","up2","down0","down1","down2","left0","left1","left2","right0","right1","right2"];
+			var mob_images = {};
+			var x_offset = 10;
+			var y_offset = 10;
+			
+			function init()
+			{
+				init_grid();
+				fill_grid_randomly();
+				init_player();
+			}
+			
+			function handle_key_event(evt)
+			{
+				//check_char_position()
+				switch(evt.keyCode)
+				{
+					case 37:
+						evt.preventDefault();
+						animation_parts = 8;
+						move_player("left");
+						//start_moving("left");
+						break;
+					case 39:
+						evt.preventDefault();
+						animation_parts = 8;
+						move_player("right");
+						//start_moving("right");
+						break;
+					case 40:
+						evt.preventDefault();
+						animation_parts = 5;
+						move_player("down");
+						//start_moving("down");
+						break;
+					case 38:
+						evt.preventDefault();
+						animation_parts = 5;
+						move_player("up");
+						//start_moving("up");
+						break;
+				}
+			}
+			window.addEventListener('keydown', handle_key_event, true);
+	</script>
+	</head>
+	<body onload="javascript:init()">
+		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10;"></canvas>
+		</div>
+	</body>
+</html>
