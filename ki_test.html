@@ -378,54 +378,53 @@
 				return random_key;
 			}
 			
-			function show()
-			{
-				init_grid();
-				fill_grid_randomly();
-				var canvas = document.getElementById("canvas");
-				var c = canvas.getContext("2d");
-				var current_char_x = grid_from_above[current_field_from_above][0];
-				var current_char_y = grid_from_above[current_field_from_above][1];
-				var char_img = get_image("images/dummy_sprite_down0_bandana.png");
-				c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
-			}
-
 			function handle_key_event(evt)
 			{
-				check_char_position()
+				//check_char_position()
 				switch(evt.keyCode)
 				{
 					case 37:
 						evt.preventDefault();
 						animation_parts = 8;
-						start_moving("left");
+						move_player("left");
+						//start_moving("left");
 						break;
 					case 39:
 						evt.preventDefault();
 						animation_parts = 8;
-						start_moving("right");
+						move_player("right");
+						//start_moving("right");
 						break;
 					case 40:
 						evt.preventDefault();
 						animation_parts = 5;
-						start_moving("down");
+						move_player("down");
+						//start_moving("down");
 						break;
 					case 38:
 						evt.preventDefault();
 						animation_parts = 5;
-						start_moving("up");
+						move_player("up");
+						//start_moving("up");
 						break;
 				}
 			}
 			window.addEventListener('keydown', handle_key_event, true);
+			
+			function init()
+			{
+				init_grid();
+				fill_grid_randomly();
+				init_player();
+			}
 	</script>
 	</head>
-	<body>
+	<body onload="javascript:init()">
 		<!-- <div style="position: relative;">
 			
 		</div> --> 
-		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10; z-index: 0;"></canvas>
-		<canvas id="canvas" width="480" height="400" style="position: absolute; left: 10; top: 10; z-index: 1;"></canvas>
+		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10;"></canvas>
+		<!-- <canvas id="canvas" width="480" height="400" style="position: absolute; left: 10; top: 10; z-index: 1;"></canvas> -->
 		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
 		<button onclick="javascript:move_mob_test()" style="position: absolute; left: 150; top: 500;">move</button>
 		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
