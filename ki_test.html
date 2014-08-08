@@ -7,8 +7,8 @@
 			var active_mob_positions = [];
 			var last_id = 0;
 			var mob_move_directions = ["up", "down", "left", "right"];
-			var mobs_running = [];
 			var active_mobs = {};
+			var mob_canvas_objects = {};
 			var currently_moving_mob = 0;
 			var mob_is_moving = false;
 			var drawings = ["up0","up1","up2","down0","down1","down2","left0","left1","left2","right0","right1","right2"];
@@ -101,34 +101,75 @@
 				active_mobs[mob_id][1] = mob_move_counter;
 			}
 
-			function move_mob_new(id, current_field, target_field, move_direction)
+			function move_mob(id, current_field, target_field, move_direction)
 			{
 				//debugger;
-				var mob = mob_images[id]["div"];
-				var standing_mob = mob_images[id][move_direction+"0"];
-				var mob_face_direction = active_mobs[id][2];
+				var mob = active_mobs[id]["div"];
+				var standing_mob = mob_canvas_objects[id][move_direction+"0"];
+				var mob_face_direction = active_mobs[id]["face_direction"];
 				if ( mob_face_direction != move_direction )
 				{
-					active_mobs[id][2] = move_direction;
-					change_mob_objects_view(id, standing_mob);
+					active_mobs[id]["face_direction"] = move_direction;
+					switch_mob_canvas(id, standing_mob);
+					return;
+				}
+				if ( grid_from_above[target_field] == undefined )
+				{
+					console.log("mob("+id+"): da geht's nich lang!");
 					return;
 				}
 				var target_x = grid_from_above[target_field][0];
 				var target_y = grid_from_above[target_field][1];
-				mob_move_intervals[id] = setInterval( function() {move_mob_div(id, move_direction, target_field, 5, target_x, target_y)}, 60 )
+				
+				active_mobs[id]["animation_counter"] = 0;
+				active_mobs[id]["animation_parts"] = [];
+				active_mobs[id]["animation_parts"][0] = mob_canvas_objects[id][move_direction+"1"];
+				interval_milisec = 165;
+				active_mobs[id]["max_animation_parts"] = 2;
+				if ( move_direction == "left" || move_direction == "right" )
+				{
+					active_mobs[id]["animation_parts"][1] = mob_canvas_objects[id][move_direction+"0"];
+					active_mobs[id]["animation_parts"][2] = mob_canvas_objects[id][move_direction+"2"];
+					active_mobs[id]["animation_parts"][3] = mob_canvas_objects[id][move_direction+"0"];
+					active_mobs[id]["max_animation_parts"] = 3;
+					interval_milisec = 110;
+				}
+				else
+				{
+					active_mobs[id]["animation_parts"][1] = mob_canvas_objects[id][move_direction+"2"];
+					active_mobs[id]["animation_parts"][2] = mob_canvas_objects[id][move_direction+"0"];
+				}
+				active_mobs[id]["animation_interval"] = setInterval( function() { animate_mob(id); }, interval_milisec);
+				active_mobs[id]["move_interval"] = setInterval( function() {move_mob_div(id, move_direction, target_field, 1, target_x, target_y)}, 10 )
+			}
+			
+			function animate_mob(id)
+			{
+				//debugger;
+				var current_animation_counter = active_mobs[id]["animation_counter"];
+				var current_animation_part = active_mobs[id]["animation_parts"][current_animation_counter];
+				switch_mob_canvas(id, current_animation_part);
+				if ( current_animation_counter >= active_mobs[id]["max_animation_parts"] )
+				{
+					clearInterval(active_mobs[id]["animation_interval"]);
+					active_mobs[id]["animation_interval"] = undefined;
+					active_mobs[id]["animation_counter"] = 0;
+					return;
+				}
+				active_mobs[id]["animation_counter"] += 1;
 			}
 
 			function move_mob_div(id, move_direction, target_field, pixels, target_x, target_y)
 			{
 				//debugger;
-				var mob_div = mob_images[id]["div"];
+				var mob_div = active_mobs[id]["div"];
 				target_x += 10;
 				target_y += 10;
 				var current_x = parseInt(mob_div.style.left.replace("/px$/", ""));
 				var current_y = parseInt(mob_div.style.top.replace("/px$/", ""));
 				//current_x = current_x-x_offset;
 				//current_y = current_y-y_offset; 
-				console.log(current_x);
+				//console.log(current_x);
 				var movement_counter = active_mobs[id][1];
 				if ( move_direction == "left" )
 				{
@@ -150,24 +191,20 @@
 				mob_div.style.top = current_y;
 				if ( current_x == target_x && current_y == target_y )
 				{
-					move_interval = mob_move_intervals[id];
-					//active_mobs[id][1] = 0;
-					clearInterval(move_interval);
-					active_mobs[id][0] = target_field;
+					
+					clearInterval(active_mobs[id]["move_interval"]);
+					active_mobs[id]["position_key"] = target_field;
 					return;
 				}
-				active_mobs[id][1] = movement_counter+1;
+				//active_mobs[id][] = movement_counter+1;
 			}
-
-			function change_mob_objects_view(id, new_object)
+			
+			function switch_mob_canvas(id, new_object)
 			{
-				var mob_objects = mob_images[id];
+				//debugger;
+				var mob_objects = mob_canvas_objects[id];
 				for ( var key in mob_objects )
 				{
-					if ( key == "div" )
-					{
-						continue;
-					}
 					var current_obj = mob_objects[key];
 					if ( current_obj == new_object )
 					{
@@ -180,9 +217,10 @@
 				}
 			}
 			
-			function move_mob(id, img_parts, position_key)
+			function start_mob_movement(id)
 			{
 				//debugger;
+				var current_field = active_mobs[id]["position_key"];
 				var move_indicator = Math.floor((Math.random() * 2) + 1);
 				if ( move_indicator == 2 )
 				{
@@ -191,28 +229,33 @@
 					
 					var direction_index = Math.floor((Math.random() * 3) + 0);
 					var direction_to_move = mob_move_directions[direction_index];
-					var animation_phases = 5;
+					var target_field = get_target_field(current_field, direction_to_move);
+					var current_datetime = new Date();
+					for ( var mob_id in active_mobs )
+					{
+						var mob_position = active_mobs[mob_id]["position_key"];
+						if ( mob_position == target_field )
+						{
+							mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): kann nicht nach "+direction_to_move+", da ist schon jemand!";
+							active_mobs[id]["move_timeout"] = setTimeout(start_mob_movement, 5000, id);
+							return;
+						}
+					}
+					if ( target_field == player_object["position_key"] )
+					{
+						mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): kann nicht nach "+direction_to_move+", da ist gerade der player!";
+						active_mobs[id]["move_timeout"] = setTimeout(start_mob_movement, 5000, id);
+						return;
+					}
+					var animation_phases = 2;
 					if ( direction_to_move == "left" || direction_to_move == "right" )
 					{
-						animation_phases = 8;
+						animation_phases = 3;
 					}
-					var current_mob_x = grid_from_above[position_key][0];
-					var current_mob_y = grid_from_above[position_key][1];
-					var mob_img_file = img_parts[0]+"_"+direction_to_move+"_"+img_parts[1]+".png";
-					var new_position_key = get_target_field(position_key, direction_to_move);
-					//var mob_face_direction = active_mobs[id][2];
-					
-					var current_datetime = new Date();
-					/*if ( addition != undefined )
-					{
-						//console.log("mob("+id+"): moving around..."+addition);
-						mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving around..."
-					}*/
-						//console.log("mob("+id+"): moving around...");
-					mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): moving "+direction_to_move+"..."
-					mob_interval = setInterval( function() { move_that_mob(id, position_key, new_position_key, img_parts, direction_to_move, animation_phases); }, 60);
+					mob_log.innerHTML = mob_log_content+"<br>"+current_datetime.getHours()+":"+current_datetime.getMinutes()+" mob("+id+"): laufe nach "+direction_to_move+"...";
+					move_mob(id, current_field, target_field, direction_to_move);
 				}
-				mobs_running.push(setTimeout(move_mob, 5000, id, img_parts, position_key));
+				active_mobs[id]["move_timeout"] = setTimeout(start_mob_movement, 5000, id);
 			}
 			
 			function init_mob()
@@ -242,14 +285,19 @@
 				while ( true )
 				{
 					var new_key = generate_random_position_key()
-					console.log(new_key);
+					//console.log(new_key);
 					if ( $.inArray(new_key, player_safe_zone) != -1 )
 					{
 						continue;
 					}
-					if ( $.inArray(new_key, active_mob_positions) != -1 )
+					for ( var mob_id in active_mobs )
 					{
-						continue;
+						var mob_position = active_mobs[mob_id]["position_key"];
+						if ( mob_position == new_key )
+						{
+							console.log("kann auf "+new_key+" keinen mob spawnen, da dort schon einer steht");
+							continue;
+						}
 					}
 					mob_spawn_key = new_key;
 					break;
@@ -259,28 +307,34 @@
 			
 			function spawn_mob(position_key)
 			{
-				var canvas = document.getElementById("canvas");
-				var c = canvas.getContext("2d");
-				var mob_img_parts = ["images/dummy_sprite", "bandana"]
-				var mob_img = get_image(mob_img_parts[0]+"_down_"+mob_img_parts[1]);
+				var mob_log = document.getElementById("mob_log");
+				var mob_log_content = mob_log.innerHTML;
+				
 				var mob_x = grid_from_above[position_key][0];
 				var mob_y = grid_from_above[position_key][1];
-				active_mob_positions.push(position_key);
-				active_mobs[last_id] = [position_key, 0, "down", mob_x, mob_y];
 				var mob_drawing_object = document.createElement("div");
-				//mob_drawing_object.id = "mob_"+last_id;
 				mob_drawing_object.style.position = "absolute";
-				mob_drawing_object.style.top = (mob_y+y_offset);
-				mob_drawing_object.style.left = (mob_x+x_offset);
-				mob_images[last_id] = {"div":mob_drawing_object};
+				mob_drawing_object.style.top = mob_y+y_offset;
+				mob_drawing_object.style.left = mob_x+x_offset;
+				active_mobs[last_id] = {"position_key":position_key, "face_direction":"down", "div":mob_drawing_object, "animation_interval":undefined, "move_interval":undefined, "move_timeout":undefined};
+				mob_log.innerHTML = mob_log_content+"<br>mob("+last_id+") spawn auf feld "+position_key;
+				mob_canvas_objects[last_id] = {};
 				for ( var ccount = 0; ccount < 12; ccount++ )
 				{
 					var mob_canvas = document.createElement("canvas");
-					mob_images[last_id][drawings[ccount]] = mob_canvas;
+					//active_mobs[last_id][drawings[ccount]] = mob_canvas;
+					mob_canvas_objects[last_id][drawings[ccount]] = mob_canvas;
 					//mob_canvas.id = "mob_move_"+drawings[ccount];
 					//mob_canvas.style = "position:absolute;";
 					mob_canvas.width = 40;
 					mob_canvas.height = 40;
+					var c_img = new Image();
+					c_img.canvas = mob_canvas;
+					c_img.onload = function() {
+						var cc = this.canvas.getContext("2d");
+						cc.drawImage(this,0,0,40,40);
+					};
+					c_img.src = "images/dummy_sprite_"+drawings[ccount]+"_bandana.png";
 					if ( drawings[ccount] != "down0" )
 					{
 						mob_canvas.style.display = "none";
@@ -290,26 +344,8 @@
 					mob_drawing_object.appendChild(mob_canvas);
 				}
 				document.body.appendChild(mob_drawing_object);
-				c.drawImage(mob_img, mob_x, mob_y, char_width, char_height);
-				//mobs_running.push(setTimeout(move_mob, 5000, last_id, mob_img_parts, position_key));
-				draw_mob_images(last_id);
+				active_mobs[last_id]["move_timeout"] = setTimeout(start_mob_movement, 5000, last_id);
 				last_id = last_id+1;
-			}
-			
-			function draw_mob_images(id)
-			{
-				for ( var count = 0; count < 12; count++ )
-				{
-					var mob_canvas = mob_images[id][drawings[count]];
-					var c_img = new Image();
-					c_img.canvas = mob_canvas;
-					c_img.onload = function() {
-						var mob_canvas = this.canvas;
-						var cc = mob_canvas.getContext("2d");
-						cc.drawImage(this,0,0,40,40);
-					};
-					c_img.src = "images/dummy_sprite_"+drawings[count]+"_bandana.png";
-				}
 			}
 
 			function move_mob_test()
@@ -342,31 +378,30 @@
 				*/
 				var current_field = active_mobs[0][0];
 				var new_position_key = get_target_field(current_field, direction_to_move);
-				move_mob_new(0, current_field, new_position_key, direction_to_move);
+				move_mob(0, current_field, new_position_key, direction_to_move);
 			}
 			
 			function stop_all_running_mobs()
 			{
-				for ( var index = 0; index < mobs_running.length; index++ )
+				for ( var id in active_mobs )
 				{
-					clearTimeout(mobs_running[index]);
-				}
-				var canvas = document.getElementById("canvas");
-				var c = canvas.getContext("2d");
-				for ( var posindex = 0; posindex < active_mob_positions.length; posindex++ )
-				{
-					var key = active_mob_positions[posindex];
-					var mob_x = grid_from_above[key][0];
-					var mob_y = grid_from_above[key][1];
-					c.clearRect(mob_x, mob_y, char_width, char_height);
-				}
-				for ( var id = 0; id < last_id; id++ )
-				{
-					var element = document.getElementById("mob_"+id);
+					var element = active_mobs[id]["div"];
 					element.remove();
+					if ( active_mobs[id]["move_interval"] != undefined )
+					{
+						clearInterval(active_mobs[id]["move_interval"]);
+					}
+					if ( active_mobs[id]["animation_interval"] != undefined )
+					{
+						clearInterval(active_mobs[id]["animation_interval"]);
+					}
+					if ( active_mobs[id]["move_timeout"] != undefined )
+					{
+						clearTimeout(active_mobs[id]["move_timeout"]);
+					}
 				}
 				active_mobs = {};
-				active_mob_positions = [];
+				mob_canvas_objects = {};
 				last_id = 0;
 			}
 			
@@ -428,7 +463,7 @@
 		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
 		<button onclick="javascript:move_mob_test()" style="position: absolute; left: 150; top: 500;">move</button>
 		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
-		<div id="mob_log" style="position:absolute; left: 500; top: 0; width:500px; height:700px; overflow:auto;">Mob-Lob:
+		<div id="mob_log" style="position:absolute; left: 500; top: 0; width:500px; height:700px; overflow:auto;">Lob-Mog (Mob-Log):
 		</div>
 	</body>
 </html>
