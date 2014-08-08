@@ -68,6 +68,10 @@ function move_player(move_direction)
 		console.log("der player bewegt sich gerade!");
 		return;
 	}
+	if ( player_object["animation_interval"] != undefined )
+	{
+		return;
+	}
 	player_object["movement_in_progress"] = true;
 	var target_field = get_target_field(player_object["position_key"], move_direction);
 	var player_div = player_object["container"];
@@ -138,6 +142,7 @@ function animate_player()
 	if ( player_animation_counter >= max_player_animation_parts )
 	{
 		clearInterval(player_object["animation_interval"]);
+		player_object["animation_interval"] = undefined;
 		player_animation_counter = 0;
 		return;
 	}
@@ -195,117 +200,6 @@ function move_player_div(move_direction, target_field, pixels, target_x, target_
 	}
 }
 
-function get_animation_image(char_file_obj, move_direction, animation_phases, current_move_counter)
-{
-	var image = null;
-	var char_file_name = "";
-
-	//FIXME: Das kann man bestimmt noch einfacher oder eleganter lösen...
-	var char_file_number = 1;
-	if ( animation_phases == 5 )
-	{
-		if ( current_move_counter >= 0 && current_move_counter <= 2 )
-		{
-			//image = get_image(char_file_name+"1.png");
-			char_file_number = 1;
-		}
-		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
-		{
-			//image = get_image(char_file_name+"2.png");
-			char_file_number = 2;
-		}
-	}
-	else
-	{
-		if ( current_move_counter >= 0 && current_move_counter <= 2 )
-		{
-			//image = get_image(char_file_name+"1.png");
-			char_file_number = 1;
-		}
-		else if ( current_move_counter >= 3 && current_move_counter <= 5 )
-		{
-			//image = get_image(char_file_name+".png");
-			char_file_number = 0;
-		}
-		else if ( current_move_counter >= 6 && current_move_counter <= 8 )
-		{
-			//image = get_image(char_file_name+"2.png");
-			char_file_number = 2;
-		}
-	}
-	if ( char_file_obj.indexOf("|") != -1 )
-	{
-		var char_file_name_parts = char_file_obj.split("|");
-		char_file_name = char_file_name_parts[0]+move_direction+char_file_number+char_file_name_parts[1];
-	}
-	image = get_image(char_file_name)
-	return image;
-}
-
-function move_char(char_file_name, move_direction)
-{
-	//debugger;
-	//Hier wird der char bewegt bzw. die Animationsphasen werden gemalt
-	var standing_char = new Image();
-	var standing_char_file = char_file_name;
-	if ( char_file_name.indexOf("|") != -1 )
-	{
-		var char_file_parts = char_file_name.split("|");
-		standing_char_file = char_file_parts[0]+move_direction+"0"+char_file_parts[1]+".png";
-	}
-	standing_char.src = standing_char_file;
-	canvas = document.getElementById("canvas");
-	c = canvas.getContext("2d");
-	
-	var old_x = current_x;
-	var old_y = current_y;
-	if ( no_move == false )
-	{
-		if ( direction == "down" )
-		{
-			current_y = current_y + 8;
-		}
-		else if ( direction == "up" )
-		{
-			current_y = current_y - 8;
-		}
-		else if ( direction == "left" )
-		{
-			current_x = current_x - 5;
-		}
-		else if ( direction == "right" )
-		{
-			current_x = current_x + 5;
-		}
-	}
-	var image = get_animation_image(char_file_name, move_direction, animation_parts, move_counter);
-	c.clearRect(old_x, old_y, char_width, char_height);
-	//FIXME: hier image.onload() verwenden anstatt der schleife
-	for ( var tries = 0; tries < 3; tries++ )
-	{
-		try
-		{
-			c.drawImage(image, current_x ,current_y, char_width, char_height);
-			break;
-		}
-		catch (exception)
-		{
-			image = get_animation_image(char_file_name, move_direction, animation_parts, move_counter);
-		}
-	}
-	move_counter = move_counter + 1;
-	//console.log("debug: "+move_counter);
-	if ( move_counter >= animation_parts )
-	{
-		c.clearRect(old_x, old_y, char_width, char_height);
-		c.drawImage(standing_char, current_x ,current_y, char_width, char_height);
-		clearInterval(interval);
-		move_counter = 0;
-		running = false;
-		move_lock = false;
-	}
-}
-
 function get_image(file)
 {
 	img = new Image();
@@ -339,84 +233,3 @@ function get_target_field(current_field, move_direction)
 	return target_row+","+target_col;
 }
 
-function start_moving(move_direction)
-{
-	//debugger;
-	if ( running == true )
-	{
-		console.log("blah!!");
-		return;
-	}
-	no_move = false;
-	if ( current_x == -1 )
-	{
-		current_x = grid_from_above[current_field_from_above][0];
-	}
-	if ( current_y == -1 )
-	{
-		current_y = grid_from_above[current_field_from_above][1];
-	}
-	if ( face_direction != move_direction )
-	{
-		var turned_char = get_image("images/dummy_sprite_"+move_direction+"0_bandana.png");
-		canvas = document.getElementById("canvas");
-		c = canvas.getContext("2d");
-		c.clearRect(current_x, current_y, char_width, char_height);
-		c.drawImage(turned_char, current_x, current_y, char_width, char_height);
-		face_direction = move_direction;
-		return;
-	}
-	var grid = grid_from_above;
-	target_field_from_above = get_target_field(current_field_from_above, move_direction);
-	//console.log(target_field_from_above);
-	//console.log(free_roaming_area);
-	//if ($.inArray(target_field_from_above, free_roaming_area) == -1 && move_direction == "up")
-	var bg_move_line = undefined;
-	var bg_move_col = undefined;
-	if ( move_direction == "up" )
-	{
-		bg_move_line = bg_move_up_line;
-	}
-	else if ( move_direction == "down" )
-	{
-		bg_move_line = bg_move_down_line;
-	}
-	else if ( move_direction == "left" )
-	{
-		bg_move_col = bg_move_left_col;
-	}
-	else if ( move_direction == "right" )
-	{
-		bg_move_col = bg_move_right_col;
-	}
-	if ( move_direction == "up" || move_direction == "down" )
-	{
-		if ( target_field_from_above.split(",")[0] == bg_move_line )
-		{
-			no_move = true;
-			move_background(move_direction);
-		}
-	}
-	else if ( move_direction == "left" || move_direction == "right" )
-	{
-		if ( target_field_from_above.split(",")[1] == bg_move_col )
-		{
-			no_move = true;
-			move_background(move_direction);
-		}
-	}
-	if ( running == false )
-	{
-		running = true;
-		direction = move_direction;
-		interval = setInterval( function() { move_char("images/dummy_sprite_|_bandana", move_direction); }, 60);
-	}
-	else
-	{
-		return;
-	}
-	if ( no_move == false )
-	{
-		current_field_from_above = target_field_from_above;
-	}
-}
