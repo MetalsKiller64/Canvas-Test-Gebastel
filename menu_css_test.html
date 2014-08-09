@@ -304,6 +304,10 @@
 			-->
 		</div>
 		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10;"></canvas>
-		<div style="position: absolute; top: 500px;">Hey, es gibt jetzt ein Menü!<br>Es kann zwar noch nicht wirklich viel, aber immerhin ist es jetzt da!</br>Öffnen kannst du es mit ESC.</div>
+		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
+		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
+		<div id="mob_log" style="position:absolute; left: 500; top: 0; width:500px; height:700px; overflow:auto;">Lob-Mog (Mob-Log):
+		</div>
+		<div style="position: absolute; top: 550px;">Hey, es gibt jetzt ein Menü!<br>Es kann zwar noch nicht wirklich viel, aber immerhin ist es jetzt da!</br>Öffnen kannst du es mit ESC.</div>
 	</body>
 </html>
