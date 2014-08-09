@@ -74,6 +74,18 @@ function move_player(move_direction)
 	}
 	player_object["movement_in_progress"] = true;
 	var target_field = get_target_field(player_object["position_key"], move_direction);
+	for ( var mob_id in active_mobs )
+	{
+		if ( active_mobs[mob_id] == undefined )
+		{
+			continue;
+		}
+		if ( target_field == active_mobs[mob_id]["position_key"] )
+		{
+			init_battle(mob_id);
+			return;
+		}
+	}
 	var player_div = player_object["container"];
 	var player_face_direction = player_object["face_direction"];
 	if ( player_face_direction != move_direction )
@@ -233,3 +245,10 @@ function get_target_field(current_field, move_direction)
 	return target_row+","+target_col;
 }
 
+function init_battle(id)
+{
+	pause_all_mobs();
+	player_object["movement_in_progress"] = false;
+	var mob = active_mobs[id];
+	show_battle_screen(25, id);
+}

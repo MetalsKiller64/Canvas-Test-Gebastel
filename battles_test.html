@@ -1,0 +1,487 @@
+<html>
+	<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<script src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/char_movement.js"></script>
+	<script type="text/javascript" src="js/background_movement.js"></script>
+	<script type="text/javascript" src="js/mobs.js"></script>
+	<link rel="stylesheet" type="text/css" href="menu.css">
+	<script type="text/javascript">
+		
+		var player_health = 100;
+		var player_atk = 5;
+		var player_def = 5;
+		var player_name = "Dummy";
+		var player_lvl = 1;
+		var player_xp = 0;
+		var has_turn = true;
+		
+		var mob_id = undefined;
+		var mob_health = 0;
+		var mob_atk = 0;
+		var mob_def = 0;
+		
+		var battle_stats = {};
+		
+		var menu_currently_selected = 0;
+		var battle_currently_selected = 0;
+		var menu_button_count = 0;
+		var battle_button_count = 0;
+		var battle_actions = [];
+		//var buttons = [0, 1, 2, 3];
+		var buttons = {};
+		var battle_buttons = {};
+		var submenus = {};
+		var menu_showing = false;
+		var submenu_showing = false;
+		var battle = false;
+		
+		function set_char_stats()
+		{
+			//TODO: die Elemente dynamisch erzeugen, speichern und hier einfach aus globalem Objekt auslesen
+			var player_info = document.getElementById("dummy_info").innerHTML;
+			document.getElementById("dummy_name").innerHTML = player_name;
+			document.getElementById("dummy_lvl").innerHTML = "Lvl: "+player_lvl;
+			document.getElementById("dummy_xp").innerHTML = "Exp: "+player_xp;
+			document.getElementById("dummy_hp").innerHTML = "HP: "+player_health;
+		}
+		
+		function init()
+		{
+			init_grid();
+			fill_grid_randomly();
+			init_player();
+			init_menu();
+			set_char_stats();
+		}
+		
+		function init_menu()
+		{
+			init_submenus();
+			init_buttons();
+			var char_stats = document.createElement("div");
+			char_stats.id = player_name+"_battle_stats";
+			char_stats.className = "char_battle_stats";
+			document.getElementById("char_battle_stats").appendChild(char_stats);
+			
+			var end = document.getElementById("end");
+			var img = new Image();
+			img.canvas = end;
+			img.onload = function() {
+				var c = this.canvas.getContext("2d");
+				c.drawImage(this, 0, 0);
+			}
+			img.src = "images/game_over_txt.png";
+		}
+		
+		function init_buttons()
+		{
+			var menu = document.getElementById("menu");
+			var battle_menu = document.getElementById("battle_menu");
+			var item_btn = document.createElement("button");
+			item_btn.className = "menu_selected";
+			item_btn.innerHTML = "Items";
+			item_btn.id = 0;
+			menu.appendChild(item_btn);
+			menu.appendChild(document.createElement("br"));
+			menu_button_count += 1;
+			
+			var equip_btn = document.createElement("button");
+			equip_btn.className = "menu_normal";
+			equip_btn.innerHTML = "Equipment";
+			equip_btn.id = 1;
+			menu.appendChild(equip_btn);
+			menu.appendChild(document.createElement("br"));
+			menu_button_count += 1;
+			
+			var status_btn = document.createElement("button");
+			status_btn.className = "menu_normal";
+			status_btn.innerHTML = "Status";
+			status_btn.id = 2;
+			menu.appendChild(status_btn);
+			menu.appendChild(document.createElement("br"));
+			menu_button_count += 1;
+			
+			var skills_btn = document.createElement("button");
+			skills_btn.className = "menu_normal";
+			skills_btn.innerHTML = "Skills";
+			skills_btn.id = 3;
+			menu.appendChild(skills_btn);
+			menu.appendChild(document.createElement("br"));
+			menu_button_count += 1;
+			
+			var atk_btn = document.createElement("button");
+			atk_btn.className = "battle_selected";
+			atk_btn.innerHTML = "Attack";
+			battle_menu.appendChild(atk_btn);
+			battle_menu.appendChild(document.createElement("br"));
+			battle_button_count += 1;
+			battle_actions[0] = "attack";
+			
+			var def_btn = document.createElement("button");
+			def_btn.className = "battle_normal";
+			def_btn.innerHTML = "Defend";
+			battle_menu.appendChild(def_btn);
+			battle_menu.appendChild(document.createElement("br"));
+			battle_button_count += 1;
+			battle_actions[1] = "defend";
+			
+			buttons = {0:item_btn, 1:equip_btn, 2:status_btn, 3:skills_btn};
+			battle_buttons = {0:atk_btn, 1:def_btn};
+		}
+		
+		function init_submenus()
+		{
+			var item_menu = document.getElementById("item_menu");
+			var equip_menu = document.getElementById("equip_menu");
+			var status_menu = document.getElementById("status_menu");
+			var skills_menu = document.getElementById("skills_menu");
+			var battle_menu = document.getElementById("battle_menu");
+			
+			var platzhalter0 = document.createElement("div");
+			var platzhalter1 = document.createElement("div");
+			var platzhalter2 = document.createElement("div");
+			var platzhalter3 = document.createElement("div");
+			var pt = "Hier ist leider noch nichts drin, komm später wieder!<br><br>Du könntest natürlich auch selbst dafür sorgen, dass hier mehr steht als nur dieser doofe Platzhalter, indem du mal mein Github-Repo auscheckst und mir ein wenig Programmierarbeit abnimmst!<br><br>(Esc=zur&uuml;ck)";
+			platzhalter0.innerHTML = pt;
+			platzhalter1.innerHTML = pt;
+			platzhalter2.innerHTML = pt;
+			platzhalter3.innerHTML = pt;
+			item_menu.appendChild(platzhalter0);
+			equip_menu.appendChild(platzhalter1);
+			status_menu.appendChild(platzhalter2);
+			skills_menu.appendChild(platzhalter3);
+			
+			submenus = {0: item_menu, 1:equip_menu, 2:status_menu, 3:skills_menu, 4:battle_menu};
+		}
+		
+		function switch_selected_button(direction)
+		{
+			//debugger;
+			if ( battle == true )
+			{
+				var menu_buttons = battle_buttons;
+				var button_count = battle_button_count;
+				var currently_selected = battle_currently_selected;
+			}
+			else
+			{
+				var menu_buttons = buttons;
+				var button_count = menu_button_count;
+				var currently_selected = menu_currently_selected
+			}
+			var current = currently_selected;
+			if ( direction == "down" )
+			{
+				if ( currently_selected == button_count-1 )
+				{
+					return;
+				}
+				currently_selected += 1
+			}
+			if ( direction == "up" )
+			{
+				if ( currently_selected == 0 )
+				{
+					return;
+				}
+				currently_selected -= 1
+			}
+			var current_btn = menu_buttons[current]
+			var new_btn = menu_buttons[currently_selected];
+			if ( battle == true )
+			{
+				current_btn.className = "battle_normal";
+				new_btn.className = "battle_selected";
+				battle_currently_selected = currently_selected;
+			}
+			else
+			{
+				current_btn.className = "menu_normal";
+				new_btn.className = "menu_selected";
+				menu_currently_selected = currently_selected;
+			}
+		}
+		
+		function show_submenu()
+		{
+			if ( battle == true )
+			{
+				var submenu = submenus[4];
+			}
+			else
+			{
+				var submenu = submenus[menu_currently_selected];
+			}
+			var menu = document.getElementById("menu");
+			submenu.style.display = "";
+			menu.style.display = "none";
+			if ( battle == false )
+			{
+				submenu_showing = true;
+			}
+		}
+		
+		function show_menu()
+		{
+			var menu = document.getElementById("menu");
+			var submenu = submenus[menu_currently_selected];
+			menu.style.display = "";
+			submenu.style.display = "none";
+			submenu_showing = false;
+			menu_showing = true;
+		}
+		
+		function hide_menu()
+		{
+			menu_showing = false;
+			var menu = document.getElementById("menu");
+			menu.style.display = "none";
+		}
+		
+		function show_battle_screen(mob_hp, id)
+		{
+			//debugger;
+			battle = true;
+			mob_health = mob_hp;
+			mob_id = id;
+			var screen = document.getElementById("battle_screen");
+			var chars = document.getElementById("battle_chars");
+			var screen_img = new Image();
+			screen_img.canvas = screen;
+			screen_img.onload = function() {
+				var c = this.canvas.getContext("2d");
+				c.drawImage(this, 0, 0, this.width+100, this.height);
+			}
+			screen_img.src = "images/grass_chunk_test.png";
+			var char_img = new Image();
+			char_img.canvas = chars;
+			char_img.onload = function() {
+				var c = this.canvas.getContext("2d");
+				c.drawImage(this, 50, 80, this.width+10, this.height);
+			}
+			char_img.src = "images/dummy_sprite_right0_bandana.png";
+			
+			var mob_img = new Image();
+			mob_img.canvas = chars;
+			mob_img.onload = function() {
+				var c = this.canvas.getContext("2d");
+				c.drawImage(this, 180, 80, this.width+10, this.height);
+			}
+			mob_img.src = "images/dummy_sprite_left0_bandana.png";
+			
+			screen.style.display = "";
+			chars.style.display = "";
+			var char_stats = document.getElementById(player_name+"_battle_stats");
+			char_stats.innerHTML = player_name+"<br>"+"HP: "+player_health;
+			battle_stats[player_name] = char_stats;
+			show_submenu();
+		}
+		
+		function fire_battle_action()
+		{
+			//debugger;
+			if ( has_turn == false )
+			{
+				return;
+			}
+			if ( player_health <= 0 )
+			{
+				end_battle("lose");
+			}
+			var btn = battle_buttons[battle_currently_selected];
+			var action = battle_actions[battle_currently_selected];
+			//debugger;
+			if ( action == "attack" )
+			{
+				player_attack(player_atk);
+			}
+			else if ( action == "defend" )
+			{
+				console.log("player defends");
+			}
+			has_turn = false;
+			update_battle_stats();
+			mob_turn();
+		}
+		
+		function player_attack(atk)
+		{
+			mob_health -= (atk-mob_def);
+		}
+		
+		function mob_attack(atk)
+		{
+			player_health -= (atk-player_def);
+		}
+		
+		function mob_turn()
+		{
+			if ( mob_health <= 0 )
+			{
+				end_battle("win");
+				return;
+			}
+			
+			var atk = Math.floor((Math.random() * 10) + 6);
+			mob_attack(atk);
+			update_battle_stats();
+			has_turn = true;
+		}
+		
+		function update_battle_stats()
+		{
+			battle_stats[player_name].innerHTML = player_name+"<br>"+"HP: "+player_health;
+			console.log("mob hp: "+mob_health);
+			if ( player_health <= 0 )
+			{
+				end_battle("lose");
+			}
+			else if ( mob_health <= 0 )
+			{
+				end_battle("win");
+			}
+		}
+		
+		function end_battle(result)
+		{
+			if ( result == "win" )
+			{
+				player_xp += 5;
+				set_char_stats();
+				document.getElementById("battle_screen").style.display = "none";
+				document.getElementById("battle_chars").style.display = "none";
+				document.getElementById("battle_menu").style.display = "none";
+				submenus[4].style.display = "none";
+				despawn_mob(mob_id);
+				battle = false;
+				has_turn = true;
+			}
+			else if ( result == "lose" )
+			{
+				var end = document.getElementById("end");
+				document.getElementById("battle_menu").style.display = "none";
+				document.getElementById("battle_screen").style.display = "none";
+				document.getElementById("battle_chars").style.display = "none";
+				end.style.display = "";
+			}
+		}
+		
+		function handle_key_event(evt)
+		{
+			//check_char_position()
+			//console.log(evt.keyCode);
+			switch(evt.keyCode)
+			{
+				case 37:
+					evt.preventDefault();
+					if ( menu_showing == false && submenu_showing == false && battle == false )
+					{
+						move_player("left");
+						break;
+					}
+					break;
+				case 39:
+					evt.preventDefault();
+					if ( menu_showing == false && submenu_showing == false && battle == false )
+					{
+						move_player("right");
+						break;
+					}
+					break;
+				case 40:
+					evt.preventDefault();
+					if ( menu_showing == true || submenu_showing == true || battle == true )
+					{
+						switch_selected_button("down");
+						break;
+					}
+					if ( battle == false )
+					{
+						move_player("down");
+					}
+					break;
+				case 38:
+					evt.preventDefault();
+					if ( menu_showing == true || submenu_showing == true || battle == true )
+					{
+						switch_selected_button("up");
+						break;
+					}
+					if ( battle == false )
+					{
+						move_player("up");
+						break;
+					}
+					break;
+				case 13:
+					evt.preventDefault();
+					if ( (menu_showing == true && submenu_showing == false) && battle == false )
+					{
+						show_submenu();
+						break;
+					}
+					else if ( battle == true )
+					{
+						fire_battle_action();
+						break;
+					}
+					break;
+				case 27:
+					evt.preventDefault();
+					if ( (menu_showing == false || submenu_showing == true) && battle == false )
+					{
+						show_menu();
+						break;
+					}
+					else
+					{
+						hide_menu();
+						break;
+					}
+					break;
+			}
+		}
+		window.addEventListener('keydown', handle_key_event, true);
+	</script>
+	</head>
+	<body onload="javascript:init()">
+		<div id="item_menu" class="menu" style="position: absolute; z-index: 100; display:none;">
+			<div class="item_list" id="item_list">
+			</div>
+		</div>
+		<div id="equip_menu" class="menu" style="position: absolute; z-index: 100; display:none;">
+		</div>
+		<div id="status_menu" class="menu" style="position: absolute; z-index: 100; display:none;">
+		</div>
+		<div id="skills_menu" class="menu" style="position: absolute; z-index: 100; display:none;">
+		</div>
+		
+		<div id="battle_menu" class="battle_menu" style="position: absolute; top: 300px; z-index: 100; display:none;">
+			<div id="char_battle_stats" style="position: absolute; left:130px;"></div>
+		</div>
+		<canvas id="battle_chars" class="battle_screen" style="position: absolute; z-index: 99; display:none;"></canvas>
+		<canvas id="battle_screen" class="battle_screen" style="position: absolute; z-index: 98; display:none;"></canvas>
+		
+		<div class="menu" id="menu" style="position: absolute; z-index: 100; display:none;">
+		  <div class="chars">
+				<div class="char" id="dummy_info"><span id="dummy_name" class="char_stat"></span><span class="char_stat" id="dummy_lvl"></span><span id="dummy_xp" class="char_stat"></span><br>
+				<span id="dummy_hp"></span>
+				</div><br>
+				<!--<div class="char">Test2</div> -->
+			</div>
+			<!--<button id="0" class="menu_selected">Items</button><br>
+			<button id="1" class="menu_normal">Equipment</button><br>
+			<button id="2" class="menu_normal">Status</button><br>
+			<button id="3" class="menu_normal">Skills</button>
+			-->
+		</div>
+		<canvas id="end" width="480" height="400" style="position: absolute; left: 10; top: 10; display: none; z-index:120;"></canvas>
+		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10;"></canvas>
+		<button onclick="javascript:init_mob()" style="position: absolute; left: 0; top: 500;">spawn mob</button>
+		<button onclick="javascript:stop_all_running_mobs()" style="position: absolute; left: 300; top: 500;">kill all mobs</button>
+		<div id="mob_log" style="position:absolute; left: 520; top: 0; width:500px; height:700px; overflow:auto;">Lob-Mog (Mob-Log):
+		</div>
+		<div style="position: absolute; top: 550px;">Ihr könnt hier wie immer rumlaufen und Mobs spawnen doch aufgepasst,<br>denn diese sind nun keine wehrlosen Dummies mehr!<br>Probiert einfach herum und sagt mir was noch kaputt ist.<br>Testet! Testet! Testet!</div>
+	</body>
+</html>
