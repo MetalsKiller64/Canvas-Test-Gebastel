@@ -309,6 +309,46 @@ function despawn_mob(id)
 	mob_canvas_objects[id] = undefined;
 }
 
+function pause_all_mobs()
+{
+	for ( var mob_id in active_mobs )
+	{
+		if ( active_mobs[mob_id] == undefined )
+		{
+			continue;
+		}
+		if ( active_mobs[mob_id]["move_interval"] != undefined )
+		{
+			clearInterval(active_mobs[mob_id]["move_interval"]);
+		}
+		if ( active_mobs[mob_id]["animation_interval"] != undefined )
+		{
+			clearInterval(active_mobs[mob_id]["animation_interval"]);
+		}
+		if ( active_mobs[mob_id]["move_timeout"] != undefined )
+		{
+			clearTimeout(active_mobs[mob_id]["move_timeout"]);
+		}
+	}
+}
+
+function resume_all_mobs()
+{
+	for ( var mob_id in active_mobs )
+	{
+		if ( active_mobs[mob_id] == undefined )
+		{
+			continue;
+		}
+		var mob = active_mobs[mob_id]["div"];
+		var mob_x = grid_from_above[mob["position_key"]][0];
+		var mob_y = grid_from_above[mob["position_key"]][1];
+		mob.style.left = mob_x+x_offset;
+		mob.style.top = mob_y+y_offset;
+		start_mob_movement(mob_id);
+	}
+}
+
 function generate_random_position_key()
 {
 	var random_row = Math.floor((Math.random() * 9) + 1);
