@@ -1,0 +1,92 @@
+<html>
+	<head>
+	<style type="text/css">
+		div.test {
+			background-color: #0099FF;
+			width: 500px;
+			height: 80px;
+			padding: 10px;
+			border-width: 5px;
+			border-style: solid;
+			border-color: #0059FF;
+		}
+		
+		button.normal {
+			background-color: #0070FF;
+			width: 90px;
+			height: 20px;
+			border-color: #0099FF;
+		}
+		
+		button.selected {
+			background-color: #FF4000;
+			width: 90px;
+			height: 20px;
+			border-color: #FF9900;
+		}
+	</style>
+	<script type="text/javascript">
+		var currently_selected = 0;
+		var buttons = ["btn1", "btn2"];
+		function switch_selected_button(direction)
+		{
+			//debugger;
+			var current = currently_selected;
+			if ( direction == "down" )
+			{
+				if ( currently_selected == 1 )
+				{
+					return;
+				}
+				currently_selected += 1
+			}
+			if ( direction == "up" )
+			{
+				if ( currently_selected == 0 )
+				{
+					return;
+				}
+				currently_selected -= 1
+			}
+			var btn_id = buttons[current];
+			var current_btn = document.getElementById(btn_id);
+			current_btn.className = "normal";
+			btn_id = buttons[currently_selected];
+			var btn = document.getElementById(btn_id);
+			btn.className = "selected";
+		}
+		
+		function handle_key_event(evt)
+		{
+			//check_char_position()
+			switch(evt.keyCode)
+			{
+				/*
+				case 37:
+					evt.preventDefault();
+					break;
+				case 39:
+					evt.preventDefault();
+					break;
+					*/
+				case 40:
+					evt.preventDefault();
+					switch_selected_button("down");
+					break;
+				case 38:
+					evt.preventDefault();
+					switch_selected_button("up");
+					break;
+			}
+		}
+		window.addEventListener('keydown', handle_key_event, true);
+	</script>
+	</head>
+	<body>
+		</div>
+		<div class="test">
+			<button id="btn1" class="selected">ATK</button>
+			<button id="btn2" class="normal">DEF</button>
+		</div>
+	</body>
+</html>
