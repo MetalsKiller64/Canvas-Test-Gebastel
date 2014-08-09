@@ -1,0 +1,95 @@
+div.test {
+	background-color: #0099FF;
+	width: 500px;
+	height: 80px;
+	padding: 10px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #0059FF;
+}
+
+div.menu {
+	background-color: #0099FF;
+	width: 480px;
+	height: 400px;
+	padding: 10px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #0059FF;
+}
+
+div.battle_menu {
+	background-color: #0099FF;
+	padding: 10px;
+	width: 480px;
+	height: 120px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #0059FF;
+}
+
+canvas.battle_screen {
+	width: 480px;
+	height: 400px;
+}
+
+div.char_battle_stats {
+	width: 120px;
+	height: 30px;
+	font-size: 20px;
+}
+
+div.chars {
+	position: absolute;
+	left: 180px;
+	top: 25px;
+}
+
+div.char {
+	width: 300px;
+	border-style: dotted;
+	border-color: #0070FF;
+	font-size: 20px;
+}
+
+span.char_stat {
+	margin-left: 10px;
+}
+
+button.battle_normal {
+	background-color: #0070FF;
+	width: 90px;
+	height: 30px;
+	border-color: #0099FF;
+	margin-bottom: 5px;
+	font-size: 20px;
+}
+
+button.battle_selected {
+	background-color: #FF4000;
+	width: 90px;
+	height: 30px;
+	border-color: #FF9900;
+	margin-bottom: 5px;
+	font-size: 20px;
+}
+
+button.menu_normal {
+	background-color: #619FFF;
+	width: 120px;
+	height: 30px;
+	border-style: outset;
+	border-color: #0099FF;
+	margin-bottom: 5px;
+	font-size: 20px;
+}
+
+button.menu_selected {
+	background-color: #0079FF;
+	width: 120px;
+	height: 30px;
+	border-style: inset;
+	border-color: #0099FF;
+	margin-bottom: 5px;
+	font-size: 20px;
+}
