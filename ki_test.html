@@ -4,7 +4,7 @@
 	<script type="text/javascript" src="js/char_movement.js"></script>
 	<script type="text/javascript" src="js/background_movement.js"></script>
 	<script>
-			var active_mob_positions = [];
+			//var active_mob_positions = [];
 			var last_id = 0;
 			var mob_move_directions = ["up", "down", "left", "right"];
 			var active_mobs = {};
@@ -233,6 +233,10 @@
 					var current_datetime = new Date();
 					for ( var mob_id in active_mobs )
 					{
+						if ( active_mobs[mob_id] == undefined )
+						{
+							continue;
+						}
 						var mob_position = active_mobs[mob_id]["position_key"];
 						if ( mob_position == target_field )
 						{
@@ -260,11 +264,11 @@
 			
 			function init_mob()
 			{
-				if ( active_mob_positions.length >= 5 )
+				/*if ( active_mob_positions.length >= 5 )
 				{
 					console.log("Es sind bereits 5 Mobs aktiv, mach die erstmal weg!");
 					return;
-				}
+				}*/
 				var current_player_field = current_field_from_above;
 				var p_row = parseInt(current_player_field.split(",")[0]);
 				var p_col = parseInt(current_player_field.split(",")[1]);
@@ -292,6 +296,10 @@
 					}
 					for ( var mob_id in active_mobs )
 					{
+						if ( active_mobs[mob_id] == undefined )
+						{
+							continue;
+						}
 						var mob_position = active_mobs[mob_id]["position_key"];
 						if ( mob_position == new_key )
 						{
@@ -403,6 +411,30 @@
 				active_mobs = {};
 				mob_canvas_objects = {};
 				last_id = 0;
+			}
+			
+			function despawn_mob(id)
+			{
+				//debugger;
+				var mob_log = document.getElementById("mob_log");
+				var mob_log_content = mob_log.innerHTML;
+				mob_log.innerHTML = mob_log_content+"<br>mob("+id+") despawned";
+				var mob = active_mobs[id]["div"];
+				if ( active_mobs[id]["move_interval"] != undefined )
+				{
+					clearInterval(active_mobs[id]["move_interval"]);
+				}
+				if ( active_mobs[id]["animation_interval"] != undefined )
+				{
+					clearInterval(active_mobs[id]["animation_interval"]);
+				}
+				if ( active_mobs[id]["move_timeout"] != undefined )
+				{
+					clearTimeout(active_mobs[id]["move_timeout"]);
+				}
+				mob.remove();
+				active_mobs[id] = undefined;
+				mob_canvas_objects[id] = undefined;
 			}
 			
 			function generate_random_position_key()

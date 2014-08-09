@@ -272,6 +272,18 @@ function move_background(direction)
 	var prev_row = 0;
 	var saved_tiles = {};
 	var background_tiles = background_tiles_directions[direction];
+	var active_mob_positions = {};
+	//debugger;
+	for ( var mob_id in active_mobs )
+	{
+		if ( active_mobs[mob_id] == undefined )
+		{
+			continue;
+		}
+		var mob_pos = active_mobs[mob_id]["position_key"];
+		active_mob_positions[mob_id] = active_mobs[mob_id]["position_key"];
+	}
+	
 	//var background_tiles = background_tiles_directions["up"];
 	var mapped_key = undefined;
 	for ( var key in grid )
@@ -350,6 +362,46 @@ function move_background(direction)
 		var fieldx = field[0];
 		var fieldy = field[1];
 		c.drawImage(tile_img, fieldx, fieldy, 40, 40);
+
+		for ( var mob_id in active_mob_positions )
+		{
+			if ( active_mobs[mob_id] == undefined )
+			{
+				continue;
+			}
+			var mob_pos = active_mob_positions[mob_id];
+			var mob_row = parseInt(mob_pos.split(",")[0]);
+			var mob_col = parseInt(mob_pos.split(",")[1]);
+			if ( direction == "up" )
+			{
+				mob_row += 1;
+			}
+			else if ( direction == "down" )
+			{
+				mob_row -= 1;
+			}
+			else if ( direction == "left" )
+			{
+				mob_col += 1;
+			}
+			else if ( direction == "right" )
+			{
+				mob_col -= 1;
+			}
+			new_mob_pos = mob_row+","+mob_col;
+			if ( grid_from_above[new_mob_pos] == undefined )
+			{
+				despawn_mob(parseInt(mob_id));
+				active_mob_positions[mob_id] = undefined;
+				continue;
+			}
+			active_mobs[mob_id]["position_key"] = new_mob_pos;
+			var new_mob_x = grid_from_above[new_mob_pos][0]+x_offset;
+			var new_mob_y = grid_from_above[new_mob_pos][1]+y_offset;
+			var mob = active_mobs[mob_id]["div"];
+			mob.style.left = new_mob_x;
+			mob.style.top = new_mob_y;
+		}
 	}
 	last_move_direction = direction;
 }
