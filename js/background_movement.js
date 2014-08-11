@@ -208,9 +208,16 @@ function store_background_tile(grid_direction, key, is_solid, img, override)
 	}
 }
 
-function get_background_tile(number)
+function get_background_tile(number, fieldx, fieldy)
 {
 	var img_obj = new Image();
+	img_obj.fx = fieldx;
+	img_obj.fy = fieldy;
+	img_obj.onload = function() {
+		var canvas = document.getElementById("background_canvas");
+		var c = canvas.getContext("2d");
+		c.drawImage(this, this.fx, this.fy, 40, 40);
+	}
 	img_obj.src = "images/grass_tile"+number+".png";
 	return img_obj;
 }
@@ -227,12 +234,19 @@ function fill_grid_randomly()
 		var field_x = current_field[0];
 		var field_y = current_field[1];
 		var random_value = Math.floor((Math.random() * 4) + 1);
-		var random_tile = get_background_tile(random_value);
+		var random_tile = get_background_tile(random_value, field_x, field_y);
 		var x_id = key.split(",")[0];
 		var y_id = key.split(",")[1];
 		if ( $.inArray(key, free_roaming_area) != -1 )
 		{
 			random_tile = new Image();
+			random_tile.fx = field_x;
+			random_tile.fy = field_y;
+			random_tile.onload = function() {
+				var canvas = document.getElementById("background_canvas");
+				var c = canvas.getContext("2d");
+				c.drawImage(this, this.fx, this.fy, 40, 40);
+			}
 			random_tile.src = "images/grass_tile_marked.png";
 		}
 		store_background_tile("up", key, false, random_tile, true);
@@ -242,7 +256,7 @@ function fill_grid_randomly()
 		store_background_tile("left", mapped_key, false, random_tile, true);
 		var mapped_key = get_mapped_key(key, "up_right");
 		store_background_tile("right", mapped_key, false, random_tile, true);
-		c.drawImage(random_tile, field_x, field_y, 40, 40);
+		//c.drawImage(random_tile, field_x, field_y, 40, 40);
 	}
 	
 	/*grid = grid_from_below;
@@ -290,6 +304,8 @@ function move_background(direction)
 	{
 		var key_row = parseInt(key.split(",")[0]);
 		var key_col = parseInt(key.split(",")[1]);
+		var field_x = grid[key][0];
+		var field_y = grid[key][1];
 		if ( saved_tiles[key_row+1] == undefined )
 		{
 			saved_tiles[key_row+1] = {};
@@ -304,7 +320,7 @@ function move_background(direction)
 			if ( saved_tiles[key_row] == undefined )
 			{
 				var random_value = Math.floor((Math.random() * 4) + 1);
-				var random_tile = get_background_tile(random_value);
+				var random_tile = get_background_tile(random_value, field_x, field_y);
 				new_tile = random_tile;
 			}
 			else
