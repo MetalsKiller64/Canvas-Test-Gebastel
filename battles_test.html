@@ -8,12 +8,7 @@
 	<link rel="stylesheet" type="text/css" href="menu.css">
 	<script type="text/javascript">
 		
-		var player_health = 100;
-		var player_atk = 5;
-		var player_def = 5;
-		var player_name = "Dummy";
-		var player_lvl = 1;
-		var player_xp = 0;
+		var chars = {};
 		var has_turn = true;
 		
 		var mob_id = undefined;
@@ -35,15 +30,88 @@
 		var menu_showing = false;
 		var submenu_showing = false;
 		var battle = false;
+		var battle_screen = undefined;
+		var debug = 0;
+		
+		function init_chars()
+		{
+			chars["Dummy"] = {"max_hp":100, "hp":100, "lvl":1, "xp":0, "next_lvl":50, "atk":5, "def":5};
+		}
+		
+		function build_char_menu_objects()
+		{
+			//debugger;
+			var menu_char_entries = document.getElementById("menu_char_entries");
+			for ( var charname in chars )
+			{
+				var char_entry = document.createElement("div");
+				var entry_name = document.createElement("span");
+				var entry_lvl = document.createElement("span");
+				var entry_xp = document.createElement("span");
+				var entry_next_lvl = document.createElement("span");
+				var entry_linebreak = document.createElement("br");
+				var entry_hp = document.createElement("span");
+				
+				char_entry.className = "char";
+				entry_name.className = "char_stat";
+				entry_lvl.className = "char_stat";
+				entry_xp.className = "char_stat";
+				entry_next_lvl.className = "char_stat";
+				entry_hp.className = "char_stat";
+				
+				char_entry.appendChild(entry_name);
+				char_entry.appendChild(entry_hp);
+				char_entry.appendChild(entry_linebreak);
+				char_entry.appendChild(entry_lvl);
+				char_entry.appendChild(entry_xp);
+				char_entry.appendChild(entry_next_lvl);
+				menu_char_entries.appendChild(char_entry);
+				chars[charname]["menu_entries"] = {"name":entry_name, "lvl":entry_lvl, "xp":entry_xp, "next_lvl":entry_next_lvl, "hp":entry_hp};
+			}
+		}
 		
 		function set_char_stats()
 		{
-			//TODO: die Elemente dynamisch erzeugen, speichern und hier einfach aus globalem Objekt auslesen
-			var player_info = document.getElementById("dummy_info").innerHTML;
-			document.getElementById("dummy_name").innerHTML = player_name;
-			document.getElementById("dummy_lvl").innerHTML = "Lvl: "+player_lvl;
-			document.getElementById("dummy_xp").innerHTML = "Exp: "+player_xp;
-			document.getElementById("dummy_hp").innerHTML = "HP: "+player_health;
+			for ( var charname in chars )
+			{
+				var charackter = chars[charname];
+				var char_hp = charackter["hp"];
+				var char_lvl = charackter["lvl"];
+				var char_xp = charackter["xp"];
+				var char_next_lvl = charackter["next_lvl"];
+				var char_atk = charackter["atk"];
+				var char_def = charackter["def"];
+				
+				charackter["menu_entries"]["name"].innerHTML = charname;
+				charackter["menu_entries"]["lvl"].innerHTML = "Lvl: "+char_lvl;
+				charackter["menu_entries"]["xp"].innerHTML = "XP: "+char_xp;
+				charackter["menu_entries"]["next_lvl"].innerHTML = "Next: "+char_next_lvl;
+				charackter["menu_entries"]["hp"].innerHTML = "HP: "+char_hp;
+				charackter["battle_stats"].innerHTML = charname+"<br>"+"HP: "+char_hp;
+			}
+		}
+		
+		function check_char_lvl(charname)
+		{
+			var char_lvl = chars[charname]["lvl"];
+			var char_xp = chars[charname]["xp"];
+			var char_hp = chars[charname]["hp"];
+			var char_atk = chars[charname]["atk"];
+			var char_def = chars[charname]["def"];
+			var char_max_hp = chars[charname]["max_hp"];
+			var char_next_lvl = chars[charname]["next_lvl"];
+			if ( char_xp >= char_next_lvl )
+			{
+				var xp_addition = char_next_lvl + (char_next_lvl * 25 / 100);
+				var hp_addition = char_max_hp * 5 / 100;
+				chars[charname]["next_lvl"] = Math.floor(char_next_lvl + xp_addition);
+				chars[charname]["lvl"] += 1;
+				chars[charname]["max_hp"] = Math.floor(char_max_hp + hp_addition);
+				chars[charname]["hp"] = chars[charname]["max_hp"];
+				chars[charname]["atk"] += 1;
+				chars[charname]["def"] += 1;
+			}
+			set_char_stats();
 		}
 		
 		function init()
@@ -52,6 +120,9 @@
 			fill_grid_randomly();
 			init_player();
 			init_menu();
+			init_chars();
+			init_battle_menu();
+			build_char_menu_objects();
 			set_char_stats();
 		}
 		
@@ -59,10 +130,6 @@
 		{
 			init_submenus();
 			init_buttons();
-			var char_stats = document.createElement("div");
-			char_stats.id = player_name+"_battle_stats";
-			char_stats.className = "char_battle_stats";
-			document.getElementById("char_battle_stats").appendChild(char_stats);
 			
 			var end = document.getElementById("end");
 			var img = new Image();
@@ -74,10 +141,50 @@
 			img.src = "images/game_over_txt.png";
 		}
 		
+		function init_battle_menu()
+		{
+			var battle_menu = document.getElementById("battle_menu");
+			var battle_screen_img = document.getElementById("battle_screen");
+			var battle_chars = document.getElementById("battle_chars");
+			
+			var battle_stats = document.createElement("div");
+			battle_stats.id = "char_battle_stats";
+			battle_stats.style.position = "absolute";
+			battle_stats.style.left = "130px";
+			//debugger;
+			for ( var charname in chars )
+			{
+				var char_stats = document.createElement("div");
+				char_stats.className = "char_battle_stats";
+				battle_stats.appendChild(char_stats);
+				chars[charname]["battle_stats"] = char_stats;
+			}
+			battle_menu.appendChild(battle_stats);
+			
+			var atk_btn = document.createElement("button");
+			atk_btn.className = "battle_selected";
+			atk_btn.innerHTML = "Attack";
+			battle_menu.appendChild(atk_btn);
+			battle_menu.appendChild(document.createElement("br"));
+			battle_button_count += 1;
+			battle_actions[0] = "attack";
+			
+			var def_btn = document.createElement("button");
+			def_btn.className = "battle_normal";
+			def_btn.innerHTML = "Defend";
+			battle_menu.appendChild(def_btn);
+			battle_menu.appendChild(document.createElement("br"));
+			battle_button_count += 1;
+			battle_actions[1] = "defend";
+			
+			battle_buttons = {0:atk_btn, 1:def_btn};
+			battle_screen = {"menu":battle_menu, "screen":battle_screen_img, "chars":battle_chars};
+		}
+		
 		function init_buttons()
 		{
 			var menu = document.getElementById("menu");
-			var battle_menu = document.getElementById("battle_menu");
+			//var battle_menu = document.getElementById("battle_menu");
 			var item_btn = document.createElement("button");
 			item_btn.className = "menu_selected";
 			item_btn.innerHTML = "Items";
@@ -110,24 +217,7 @@
 			menu.appendChild(document.createElement("br"));
 			menu_button_count += 1;
 			
-			var atk_btn = document.createElement("button");
-			atk_btn.className = "battle_selected";
-			atk_btn.innerHTML = "Attack";
-			battle_menu.appendChild(atk_btn);
-			battle_menu.appendChild(document.createElement("br"));
-			battle_button_count += 1;
-			battle_actions[0] = "attack";
-			
-			var def_btn = document.createElement("button");
-			def_btn.className = "battle_normal";
-			def_btn.innerHTML = "Defend";
-			battle_menu.appendChild(def_btn);
-			battle_menu.appendChild(document.createElement("br"));
-			battle_button_count += 1;
-			battle_actions[1] = "defend";
-			
 			buttons = {0:item_btn, 1:equip_btn, 2:status_btn, 3:skills_btn};
-			battle_buttons = {0:atk_btn, 1:def_btn};
 		}
 		
 		function init_submenus()
@@ -136,7 +226,6 @@
 			var equip_menu = document.getElementById("equip_menu");
 			var status_menu = document.getElementById("status_menu");
 			var skills_menu = document.getElementById("skills_menu");
-			var battle_menu = document.getElementById("battle_menu");
 			
 			var platzhalter0 = document.createElement("div");
 			var platzhalter1 = document.createElement("div");
@@ -152,7 +241,7 @@
 			status_menu.appendChild(platzhalter2);
 			skills_menu.appendChild(platzhalter3);
 			
-			submenus = {0: item_menu, 1:equip_menu, 2:status_menu, 3:skills_menu, 4:battle_menu};
+			submenus = {0: item_menu, 1:equip_menu, 2:status_menu, 3:skills_menu};
 		}
 		
 		function switch_selected_button(direction)
@@ -207,7 +296,7 @@
 		{
 			if ( battle == true )
 			{
-				var submenu = submenus[4];
+				var submenu = battle_screen["menu"];
 			}
 			else
 			{
@@ -272,9 +361,6 @@
 			
 			screen.style.display = "";
 			chars.style.display = "";
-			var char_stats = document.getElementById(player_name+"_battle_stats");
-			char_stats.innerHTML = player_name+"<br>"+"HP: "+player_health;
-			battle_stats[player_name] = char_stats;
 			show_submenu();
 		}
 		
@@ -285,7 +371,8 @@
 			{
 				return;
 			}
-			if ( player_health <= 0 )
+			still_alive = check_char_healths();
+			if ( still_alive == false )
 			{
 				end_battle("lose");
 			}
@@ -294,7 +381,7 @@
 			//debugger;
 			if ( action == "attack" )
 			{
-				player_attack(player_atk);
+				player_attack(chars["Dummy"]["atk"]);
 			}
 			else if ( action == "defend" )
 			{
@@ -310,13 +397,17 @@
 			mob_health -= (atk-mob_def);
 		}
 		
-		function mob_attack(atk)
+		function mob_attack(charname, atk)
 		{
-			player_health -= (atk-player_def);
+			chars[charname]["hp"] -= (atk - chars[charname]["def"]);
 		}
 		
 		function mob_turn()
 		{
+			if ( battle == false )
+			{
+				return;
+			}
 			if ( mob_health <= 0 )
 			{
 				end_battle("win");
@@ -324,20 +415,34 @@
 			}
 			
 			var atk = Math.floor((Math.random() * 10) + 6);
-			mob_attack(atk);
+			mob_attack("Dummy", atk);
 			update_battle_stats();
 			has_turn = true;
 		}
 		
+		function check_char_healths()
+		{
+			for ( charname in chars )
+			{
+				if ( chars[charname]["hp"] >= 1 )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		
 		function update_battle_stats()
 		{
-			battle_stats[player_name].innerHTML = player_name+"<br>"+"HP: "+player_health;
+			set_char_stats();
 			console.log("mob hp: "+mob_health);
-			if ( player_health <= 0 )
+			var alive = check_char_healths();
+			if ( alive == false )
 			{
 				end_battle("lose");
+				return;
 			}
-			else if ( mob_health <= 0 )
+			if ( mob_health <= 0 )
 			{
 				end_battle("win");
 			}
@@ -347,12 +452,16 @@
 		{
 			if ( result == "win" )
 			{
-				player_xp += 5;
+				for ( charname in chars )
+				{
+					chars[charname]["xp"] += 15;
+					check_char_lvl(charname);
+				}
 				set_char_stats();
-				document.getElementById("battle_screen").style.display = "none";
-				document.getElementById("battle_chars").style.display = "none";
-				document.getElementById("battle_menu").style.display = "none";
-				submenus[4].style.display = "none";
+				for ( var item in battle_screen )
+				{
+					battle_screen[item].style.display = "none";
+				}
 				despawn_mob(mob_id);
 				battle = false;
 				has_turn = true;
@@ -360,16 +469,16 @@
 			else if ( result == "lose" )
 			{
 				var end = document.getElementById("end");
-				document.getElementById("battle_menu").style.display = "none";
-				document.getElementById("battle_screen").style.display = "none";
-				document.getElementById("battle_chars").style.display = "none";
 				end.style.display = "";
+				for ( var item in battle_screen )
+				{
+					battle_screen[item].style.display = "none";
+				}
 			}
 		}
 		
 		function handle_key_event(evt)
 		{
-			//check_char_position()
 			//console.log(evt.keyCode);
 			switch(evt.keyCode)
 			{
@@ -457,24 +566,12 @@
 		<div id="skills_menu" class="menu" style="position: absolute; z-index: 100; display:none;">
 		</div>
 		
-		<div id="battle_menu" class="battle_menu" style="position: absolute; top: 300px; z-index: 100; display:none;">
-			<div id="char_battle_stats" style="position: absolute; left:130px;"></div>
-		</div>
+		<div id="battle_menu" class="battle_menu" style="position: absolute; top: 300px; z-index: 100; display:none;"></div>
 		<canvas id="battle_chars" class="battle_screen" style="position: absolute; z-index: 99; display:none;"></canvas>
 		<canvas id="battle_screen" class="battle_screen" style="position: absolute; z-index: 98; display:none;"></canvas>
 		
 		<div class="menu" id="menu" style="position: absolute; z-index: 100; display:none;">
-		  <div class="chars">
-				<div class="char" id="dummy_info"><span id="dummy_name" class="char_stat"></span><span class="char_stat" id="dummy_lvl"></span><span id="dummy_xp" class="char_stat"></span><br>
-				<span id="dummy_hp"></span>
-				</div><br>
-				<!--<div class="char">Test2</div> -->
-			</div>
-			<!--<button id="0" class="menu_selected">Items</button><br>
-			<button id="1" class="menu_normal">Equipment</button><br>
-			<button id="2" class="menu_normal">Status</button><br>
-			<button id="3" class="menu_normal">Skills</button>
-			-->
+			<div id="menu_char_entries" class="chars"></div>
 		</div>
 		<canvas id="end" width="480" height="400" style="position: absolute; left: 10; top: 10; display: none; z-index:120;"></canvas>
 		<canvas id="background_canvas" width="480" height="400" style="position: absolute; left: 10; top: 10;"></canvas>
