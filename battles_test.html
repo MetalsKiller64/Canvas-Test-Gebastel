@@ -399,7 +399,12 @@
 		
 		function mob_attack(charname, atk)
 		{
-			chars[charname]["hp"] -= (atk - chars[charname]["def"]);
+			atk -= chars[charname]["def"];
+			if ( atk <= 0 )
+			{
+				atk = 1;
+			}
+			chars[charname]["hp"] -= (atk);
 		}
 		
 		function mob_turn()
