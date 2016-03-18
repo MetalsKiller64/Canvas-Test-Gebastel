@@ -35,11 +35,219 @@ var key_map_right_to_down = {};
 var key_map_directions = {"up_down":key_map_up_to_down, "up_left":key_map_up_to_left, "up_right":key_map_up_to_right, "down_up":key_map_down_to_up, "down_left":key_map_down_to_left, "down_right":key_map_down_to_right, "left_right":key_map_left_to_right, "left_up":key_map_left_to_up, "left_down":key_map_left_to_down, "right_left":key_map_right_to_left, "right_up":key_map_right_to_up, "right_down":key_map_right_to_down};
 var mapping_directions = {"down":"up_down", "up":"down_up", "left":"right_left", "right":"left_right"};
 
+//var world = {0:"one part of the world", 1:"another part of the world", 2:"some other part"};
+//var parts = {"one part of the world":"reference to the chunks of this part", "another part of the world":"the chunks of this part"};
+//var chunks = {"reference to the chunks of this part":{0:"images/grass_chunk_test.png"}, "the chunks of this part":{}};
+
+//var tiles = {0:{"0,0":"irgendein image-part", "0,1":"noch ein image-part"}, 1:{"0,0":"img-part von einem anderen chunk", "0,1":"ein weiterer img-part"}, 2:{"0,0":"blah", "0,1":"blubber"}, 3:{"0,0":"fasel", "0,1":"foo"}, 4:{"0,0":"bar", "0,1":"batz"}, 5:{"0,0":"dinge", "0,1":"donge"}};
+//var chunks = {0:{0:tiles[0], 1:tiles[1], 2:tiles[2]}, 1:{0:tiles[3], 1:tiles[4], 2:tiles[5]}};
+//var chunks = {0:{"0,0":"irgendein image-part", "0,1":"noch ein image-part"}, 1:{"0,0":"img-part von einem anderen chunk", "0,1":"ein weiterer img-part"}, 2:{"0,0":"blah", "0,1":"blubber"}, 3:{"0,0":"fasel", "0,1":"foo"}, 4:{"0,0":"bar", "0,1":"batz"}, 5:{"0,0":"dinge", "0,1":"donge"}};
+//var parts = {0:{0:chunks[0], 1:chunks[1], 2:chunks[2]}, 1:{0:chunks[3], 1:chunks[4], 2:chunks[5]}};
+//var world = {0:parts[0], 1:parts[1]};
+
+function blubber()
+{
+	for ( var part in world )
+	{
+		console.log("part: "+part);
+		for ( var chunk in world[part] )
+		{
+			console.log("> chunk: "+chunk);
+			for ( var tilemap in world[part][chunk] )
+			{
+				console.log("> > > tile: "+world[part][chunk][tilemap]);
+			}
+		}
+	}
+}
+
+//var chunk_sources = ["images/grass_chunk_test0.png", "images/grass_chunk_test1.png"];
+var chunk_source = "images/world/"
+var chunks = {};
+var parts = {};
+
+function does_file_exist(filepath)
+{
+	/*
+	ergebnis = false;
+	//debugger;
+	$.ajax({
+		url:filepath,
+		type:'HEAD',
+		error: function() {
+			ergebnis = false;
+			return;
+		},
+		success: function() {
+			ergebnis = true;
+			return;
+		}
+	});
+	*/
+	//debugger;
+	console.log(filepath)
+	var xhr = new XMLHttpRequest();
+	xhr.open('HEAD', filepath, false);
+	try
+	{
+		xhr.send();
+	}
+	catch (e)
+	{
+		return false;
+	}
+	
+	if (xhr.status == "404")
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+	
+	//return ergebnis;
+}
+
+function test_image_split()
+{
+	//debugger;
+	var part_key = 0+","+0;
+	/*
+	for ( var pcol = 0; pcol < 10; pcol++ )
+	{
+		for ( var prow = 0; prow < 10; prow++ )
+		{
+			part_key = prow+","+pcol;
+		}
+	}
+	*/
+	for ( var ccol = 0; ccol < 10; ccol++ )
+	{
+		for ( var crow = 0; crow < 10; crow++ )
+		{
+			var chunk_key = crow+","+ccol;
+			var source = chunk_source+part_key+"/"+chunk_key+".png";
+			var result = does_file_exist(source);
+			if ( result == false )
+			{
+				console.log("file "+source+" existiert nicht")
+				continue;
+			}
+			var src_step = 16;
+			var dst_step = 40;
+			var src_x = 0;
+			var dst_x = 0;
+			for ( var col = 0; col < 10; col++ )
+			{
+				var src_y = 0;
+				var dst_y = 0;
+				for ( var row = 0; row < 10; row++ )
+				{
+					var img = new Image();
+					var tile_key = row+","+col;
+					img.tile_key = tile_key;
+					img.src_x = src_x;
+					img.src_y = src_y;
+					img.dst_x = dst_x;
+					img.dst_y = dst_y;
+					img.onload = function() {
+						var canvas = document.getElementById("background_canvas");
+						var c = canvas.getContext("2d");
+						c.drawImage(this, this.src_x, this.src_y, src_step, src_step, this.dst_x, this.dst_y, dst_step, dst_step);
+					}
+					img.src = source;
+					if ( chunks[chunk_key] == undefined )
+					{
+						chunks[chunk_key] = {};
+					}
+					chunks[chunk_key][tile_key] = img;
+					src_y += src_step;
+					dst_y += dst_step;
+				}
+				src_x += src_step;
+				dst_x += dst_step;
+			}
+			if ( parts[part_key] == undefined )
+			{
+				parts[part_key] = [];
+			}
+			parts[part_key][chunk_key] = undefined;
+		}
+	}
+	
+	/*
+	for ( var chunk_src in chunk_sources )
+	{
+		var source = chunk_sources[chunk_src];
+		var src_step = 16;
+		var dst_step = 40;
+		var src_x = 0;
+		var dst_x = 0;
+		for ( var col = 0; col < 10; col++ )
+		{
+			var src_y = 0;
+			var dst_y = 0;
+			for ( var row = 0; row < 10; row++ )
+			{
+				var img = new Image();
+				var tile_key = row+","+col;
+				img.tile_key = tile_key;
+				img.src_x = src_x;
+				img.src_y = src_y;
+				img.dst_x = dst_x;
+				img.dst_y = dst_y;
+				img.onload = function() {
+					var canvas = document.getElementById("background_canvas");
+					var c = canvas.getContext("2d");
+					c.drawImage(this, this.src_x, this.src_y, src_step, src_step, this.dst_x, this.dst_y, dst_step, dst_step);
+				}
+				img.src = source;
+				if ( chunks[chunk_key] == undefined )
+				{
+					chunks[chunk_key] = {};
+				}
+				chunks[chunk_key][tile_key] = img;
+				if ( parts[part_key] == undefined )
+				{
+					parts[part_key] = [];
+				}
+				src_y += src_step;
+				dst_y += dst_step;
+			}
+			src_x += src_step;
+			dst_x += dst_step;
+		}
+		parts[part_key].push(chunk_key);
+		chunk_key += 1;
+	}
+	*/
+}
+
+function testblah()
+{
+	for ( var part_key in parts )
+	{
+		var part = parts[part_key];
+		console.log("part_key: "+part_key);
+		console.log("part: "+part);
+		for ( var chunk_key in part )
+		{
+			console.log(">> chunk: "+chunk_key);
+			for ( tile_key in chunks[chunk_key] )
+			{
+				console.log(">>>> tile_key: "+tile_key);
+				console.log(">>>>>>>>> pos: "+chunks[chunk_key][tile_key].src_x+","+chunks[chunk_key][tile_key].src_y);
+				console.log(">>>>>>>>> tile: "+chunks[chunk_key][tile_key]);
+			}
+		}
+	}
+}
+
 function init_grid()
 {
 	if ( grids_ready )
 	{
-		console.log("die Raster-Objekte sind bereits initialisiert")
 		return;
 	}
 	var y = 0;
@@ -422,18 +630,40 @@ function move_background(direction)
 	last_move_direction = direction;
 }
 
-function show()
+/*
+function test_image_split()
 {
-	init_grid();
-	fill_grid_randomly();
-	var canvas = document.getElementById("canvas");
-	var c = canvas.getContext("2d");
-	var current_char_x = grid_from_above[current_field_from_above][0];
-	var current_char_y = grid_from_above[current_field_from_above][1];
-	var char_img = get_image("images/dummy_sprite_down0_bandana.png");
-	c.drawImage(char_img, current_char_x, current_char_y, char_width, char_height);
+	var source = "images/grass_chunk_test.png";
+	var src_step = 16;
+	var dst_step = 40;
+	var src_x = 0;
+	var dst_x = 0;
+	for ( var x = 0; x < 10; x++ )
+	{
+		var src_y = 0;
+		var dst_y = 0;
+		for ( var y = 0; y < 10; y++ )
+		{
+			var img = new Image();
+			img.src_x = src_x;
+			img.src_y = src_y;
+			img.dst_x = dst_x;
+			img.dst_y = dst_y;
+			img.onload = function() {
+				var canvas = document.getElementById("background_canvas");
+				c = canvas.getContext("2d");
+				console.log(this.src_x+", "+this.src_y+", "+src_step+", "+src_step+", "+this.dst_x+", "+this.dst_x+", "+dst_step+", "+dst_step)
+				c.drawImage(this, this.src_x, this.src_y, src_step, src_step, this.dst_x, this.dst_y, dst_step, dst_step);
+			}
+			img.src = source
+			src_y += src_step;
+			dst_y += dst_step;
+		}
+		src_x += src_step;
+		dst_x += dst_step;
+	}
 }
-
+*/
 function check_char_position()
 {
 	//manchmal verrutscht der Char in der Position zwischen die Tiles was dann doof aussieht;
