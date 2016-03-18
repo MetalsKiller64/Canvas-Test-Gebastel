@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+
+<meta charset="utf-8" />
+
+<style>
+	.cone { 
+		width: 0; 
+		height: 0; 
+		border-left: 70px solid transparent; 
+		border-right: 70px solid transparent; 
+		border-top: 100px solid red; 
+		border-radius: 50%;
+		transform-origin: bottom;
+		position: absolute;
+	}
+</style>
+
+<script src="js/jquery.js"></script>
+
+<script>
+	var angle = 135;
+	var angle_speed = 0;
+	var angle_accel = 0;
+	var trans_left = 100;
+	var trans_top = 100;
+	var trans_speed = 0;
+	var trans_accel = 0;
+	function animate( force_update ) {
+		angle_speed += angle_accel;
+		trans_speed += trans_accel;
+		if( angle_speed!=0 || trans_speed!=0 || force_update ) {
+			angle = (angle + angle_speed) % 360;
+			angle_speed *= 0.8;
+			trans_left += Math.sin((angle/180)*Math.PI)*trans_speed;
+			trans_top += -Math.cos((angle/180)*Math.PI)*trans_speed;
+			trans_speed *= 0.8;
+			if( Math.abs(angle_speed)<0.1 ) {
+				angle_speed = 0;
+			}
+			if( Math.abs(trans_speed)<0.1 ) {
+				trans_speed = 0;
+			}
+			$('.cone')[0].style.transform="rotate("+String(angle)+"deg)";
+			$('.cone')[0].style.left=trans_left+'px';
+			$('.cone')[0].style.top=trans_top+'px';
+		}
+	}
+	function handle_keydown( evt ) {
+		switch( evt.keyCode )
+		{
+			case 37:
+				//left
+				angle_accel = -2;
+				break;
+			case 39:
+				//right
+				angle_accel = 2;
+				break;
+			case 40:
+				//down
+				trans_accel = -2;
+				break;
+			case 38:
+				//up
+				trans_accel = 2;
+				break;
+		}
+	}
+	function handle_keyup( evt ) {
+		switch( evt.keyCode )
+		{
+			case 37:
+				//left
+				if( angle_accel<0 ) angle_accel = 0;
+				break;
+			case 39:
+				//right
+				if( angle_accel>0 ) angle_accel = 0;
+				break;
+			case 40:
+				//down
+				if( trans_accel<0 ) trans_accel = 0;
+				break;
+			case 38:
+				//up
+				if( trans_accel>0 ) trans_accel = 0;
+				break;
+		}
+	}
+
+	$(document).ready( function() {
+		window.addEventListener( 'keydown', handle_keydown, true );
+		window.addEventListener( 'keyup', handle_keyup, true );
+		animate( true );
+		window.setInterval( function(){ animate(); }, 20 );
+	} );
+</script>
+
+<div class="cone" />
