@@ -49,18 +49,22 @@
 		switch( evt.keyCode )
 		{
 			case 37:
+			case 65:
 				//left
 				angle_accel = -2;
 				break;
 			case 39:
+			case 68:
 				//right
 				angle_accel = 2;
 				break;
 			case 40:
+			case 83:
 				//down
 				trans_accel = -2;
 				break;
 			case 38:
+			case 87:
 				//up
 				trans_accel = 2;
 				break;
@@ -70,18 +74,22 @@
 		switch( evt.keyCode )
 		{
 			case 37:
+			case 65:
 				//left
 				if( angle_accel<0 ) angle_accel = 0;
 				break;
 			case 39:
+			case 68:
 				//right
 				if( angle_accel>0 ) angle_accel = 0;
 				break;
 			case 40:
+			case 83:
 				//down
 				if( trans_accel<0 ) trans_accel = 0;
 				break;
 			case 38:
+			case 87:
 				//up
 				if( trans_accel>0 ) trans_accel = 0;
 				break;
