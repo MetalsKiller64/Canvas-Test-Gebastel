@@ -3,7 +3,7 @@
 <meta charset="utf-8" />
 
 <style>
-	.cone { 
+	.cone, .cone2 { 
 		width: 0; 
 		height: 0; 
 		border-left: 70px solid transparent; 
@@ -12,6 +12,9 @@
 		border-radius: 50%;
 		transform-origin: bottom;
 		position: absolute;
+	}
+	.cone2 {
+		border-top: 100px solid blue;
 	}
 </style>
 
@@ -25,14 +28,30 @@
 	var trans_top = 100;
 	var trans_speed = 0;
 	var trans_accel = 0;
+	
+	var angle2 = 135;
+	var angle_speed2 = 0;
+	var trans_left2 = 200;
+	var trans_top2 = 200;
+	var trans_speed2 = 0;
+	
 	function animate( force_update ) {
 		angle_speed += angle_accel;
 		trans_speed += trans_accel;
 		if( angle_speed!=0 || trans_speed!=0 || force_update ) {
+			
 			angle = (angle + angle_speed) % 360;
+			
+			angle2 = (angle2 + angle_speed2) % 360;
+			
 			angle_speed *= 0.8;
+			
 			trans_left += Math.sin((angle/180)*Math.PI)*trans_speed;
 			trans_top += -Math.cos((angle/180)*Math.PI)*trans_speed;
+			
+			trans_left2 += Math.sin((angle2/180)*Math.PI)*trans_speed2;
+			trans_top2 += -Math.cos((angle2/180)*Math.PI)*trans_speed2;
+			
 			trans_speed *= 0.8;
 			if( Math.abs(angle_speed)<0.1 ) {
 				angle_speed = 0;
@@ -40,9 +59,14 @@
 			if( Math.abs(trans_speed)<0.1 ) {
 				trans_speed = 0;
 			}
+			
 			$('.cone')[0].style.transform="rotate("+String(angle)+"deg)";
 			$('.cone')[0].style.left=trans_left+'px';
 			$('.cone')[0].style.top=trans_top+'px';
+			
+			$('.cone2')[0].style.transform="rotate("+String(angle2)+"deg)";
+			$('.cone2')[0].style.left=trans_left2+'px';
+			$('.cone2')[0].style.top=trans_top2+'px';
 		}
 	}
 	function handle_keydown( evt ) {
@@ -52,21 +76,25 @@
 			case 65:
 				//left
 				angle_accel = -2;
+				angle_speed2 = -10;
 				break;
 			case 39:
 			case 68:
 				//right
 				angle_accel = 2;
+				angle_speed2 = 10;
 				break;
 			case 40:
 			case 83:
 				//down
 				trans_accel = -2;
+				trans_speed2 = -10;
 				break;
 			case 38:
 			case 87:
 				//up
 				trans_accel = 2;
+				trans_speed2 = 10;
 				break;
 		}
 	}
@@ -77,21 +105,25 @@
 			case 65:
 				//left
 				if( angle_accel<0 ) angle_accel = 0;
+				if( angle_speed2<0 ) angle_speed2 = 0;
 				break;
 			case 39:
 			case 68:
 				//right
 				if( angle_accel>0 ) angle_accel = 0;
+				if( angle_speed2>0 ) angle_speed2 = 0;
 				break;
 			case 40:
 			case 83:
 				//down
 				if( trans_accel<0 ) trans_accel = 0;
+				if( trans_speed2<0 ) trans_speed2 = 0;
 				break;
 			case 38:
 			case 87:
 				//up
 				if( trans_accel>0 ) trans_accel = 0;
+				if( trans_speed2>0 ) trans_speed2 = 0;
 				break;
 		}
 	}
@@ -104,4 +136,5 @@
 	} );
 </script>
 
-<div class="cone" />
+<div class="cone"></div>
+<div class="cone2"></div>
